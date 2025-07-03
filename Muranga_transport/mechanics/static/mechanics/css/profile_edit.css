@@ -1,0 +1,106 @@
+.edit-profile-container {
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 30px;
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .edit-profile-container:hover {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+  }
+  
+  .edit-profile-container h1 {
+    text-align: center;
+    color: var(--primary-dark);
+    margin-bottom: 30px;
+    font-weight: 600;
+    font-size: 1.8rem;
+  }
+  
+  .edit-profile-form .form-group {
+    margin-bottom: 25px;
+  }
+  
+  .edit-profile-form label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--secondary-color);
+    font-size: 0.95rem;
+  }
+  
+  .edit-profile-form input[type="text"],
+  .edit-profile-form input[type="number"],
+  .edit-profile-form input[type="email"],
+  .edit-profile-form input[type="tel"] {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .edit-profile-form input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+    outline: none;
+  }
+  
+  .edit-profile-form .readonly-field {
+    background-color: var(--light-gray);
+    color: var(--dark-gray);
+    cursor: not-allowed;
+  }
+  
+  .edit-profile-form .btn-container {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+  }
+  
+  .edit-profile-form .btn {
+    display: inline-block;
+    background: var(--primary-color);
+    color: var(--white);
+    padding: 12px 25px;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    flex: 1;
+    text-align: center;
+  }
+  
+  .edit-profile-form .btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+  }
+  
+  .edit-profile-form .cancel-btn {
+    background: var(--medium-gray);
+    color: var(--secondary-color);
+  }
+  
+  .edit-profile-form .cancel-btn:hover {
+    background: var(--dark-gray);
+    color: var(--white);
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .edit-profile-container {
+      margin: 20px;
+      padding: 20px;
+    }
+    
+    .edit-profile-form .btn-container {
+      flex-direction: column;
+    }
+  }

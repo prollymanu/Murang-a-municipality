@@ -1,0 +1,83 @@
+{% extends "mechanics/base.html" %}
+{% load static %}
+{% block title %}Task Details | Municipality Mechanics{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mechanics/css/tasks.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<header class="top-nav">
+  <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
+  <div class="nav-right">
+    <span class="user-greeting">Welcome, {{ mechanic.full_name }}</span>
+    <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="User" class="user-avatar">
+  </div>
+</header>
+
+<div class="page-header">
+  <h1 class="page-title">Task Details</h1>
+</div>
+
+<div class="card task-detail-card">
+  <div class="task-detail-header">
+    <h2>
+      {{ task.maintenance_request.vehicle.number_plate }} - {{ task.maintenance_request.vehicle.vehicle_type }}
+      <span class="task-status status-{{ task.status }}">{{ task.get_status_display }}</span>
+    </h2>
+    <div class="task-ids">
+      <p><strong>Request ID:</strong> {{ task.maintenance_request.request_id }}</p>
+      <p><strong>Unique Task ID:</strong> {{ task.unique_task_id }}</p>
+    </div>
+  </div>
+
+  <div class="task-detail-body">
+    <div class="detail-row">
+      <div class="detail-label">Location:</div>
+      <div class="detail-value">{{ task.maintenance_request.vehicle.location }}</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-label">Priority:</div>
+      <div class="detail-value">{{ task.get_priority_display }}</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-label">Submitted At:</div>
+      <div class="detail-value">{{ task.maintenance_request.submitted_at|date:"d M Y H:i" }}</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-label">Current Progress:</div>
+      <div class="detail-value">{{ task.progress }}%</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-label">Mechanic Notes:</div>
+      <div class="detail-value">{{ task.notes|default:"No notes provided." }}</div>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-label">
+        <span>Completion Progress</span>
+        <span>{{ task.progress }}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ task.progress }}%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="task-actions">
+    {% if task.status != 'completed' %}
+    <a href="{% url 'mechanics:update_task_progress' task.pk %}" class="btn btn-update">Update Progress</a>
+    <a href="{% url 'mechanics:complete_task' task.pk %}" class="btn btn-complete">Mark Complete</a>
+    {% endif %}
+    {% if task.status == 'in_progress' or task.status == 'completed' %}
+    <a href="{% url 'mechanics:submit_invoice' task.pk %}" class="btn btn-invoice">Submit Invoice</a>
+    {% endif %}
+    <a href="{% url 'mechanics:tasks' %}" class="btn btn-back">Back to Tasks</a>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'mechanics/js/tasks.js' %}"></script>
+{% endblock %}

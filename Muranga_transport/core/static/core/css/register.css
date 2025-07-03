@@ -1,0 +1,302 @@
+:root {
+  /* Color Scheme */
+  --primary-green: #1b9e3e;    /* Vibrant green */
+  --light-green: #d5efd8;      /* Soft light green */
+  --dark-green: #0a5c1f;       /* Deep dark green */
+  --accent-gold: #d4af37;
+  --white: #ffffff;
+  --light-gray: #f5f5f5;
+  --dark-gray: #333333;
+  --shadow-green: rgba(27, 158, 62, 0.2);
+  --error-red: #e74c3c;
+}
+
+/* Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: var(--light-green);
+  color: var(--dark-gray);
+  line-height: 1.6;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Changed from center to allow overflow */
+  background-image: 
+      radial-gradient(
+          circle at 20% 40%,
+          rgba(27, 158, 62, 0.15) 0%,
+          transparent 25%
+      ),
+      radial-gradient(
+          circle at 80% 60%,
+          rgba(27, 158, 62, 0.15) 0%,
+          transparent 25%
+      ),
+      linear-gradient(
+          to bottom right,
+          var(--light-green),
+          var(--primary-green)
+      );
+  overflow: auto; /* Enable scrolling */
+}
+
+.container {
+  width: 100%;
+  max-width: 500px;
+  background: var(--white);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--shadow-green);
+  margin: 30px auto; /* Added vertical margin */
+}
+
+/* Logo */
+.logo-container {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo {
+  max-width: 180px;
+  height: auto;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Headings */
+h1 {
+  text-align: center;
+  color: var(--primary-green);
+  margin-bottom: 30px;
+  font-size: 26px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Feedback message styles */
+ul.messages {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 20px;
+}
+
+ul.messages li {
+  margin-bottom: 10px;
+  padding: 12px 15px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+ul.messages li.success,
+div.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+ul.messages li.error,
+div.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Forms */
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label,
+.role-selector label {
+  font-weight: 600;
+  color: var(--dark-green);
+  font-size: 15px;
+}
+
+.form-group input,
+.role-selector select {
+  padding: 14px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s;
+  background-color: rgba(255, 255, 255, 0.9);
+  width: 100%;
+}
+
+.form-group input:focus,
+.role-selector select:focus {
+  border-color: var(--primary-green);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--shadow-green);
+}
+
+/* Role Selection */
+.role-selector {
+  margin-bottom: 10px;
+}
+
+/* Role-specific Fields */
+.role-fields {
+  display: none;
+  animation: fadeIn 0.3s ease-out;
+  border-left: 3px solid var(--primary-green);
+  padding-left: 15px;
+  margin: 15px 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Terms Checkbox */
+.terms-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 10px;
+}
+
+.terms-checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-green);
+}
+
+.terms-checkbox label {
+  font-size: 14px;
+  color: var(--dark-gray);
+  user-select: none;
+}
+
+.terms-checkbox a {
+  color: var(--primary-green);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.terms-checkbox a:hover {
+  text-decoration: underline;
+  color: var(--dark-green);
+}
+
+/* Button */
+.btn {
+  background-color: var(--primary-green);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.btn:hover {
+  background-color: var(--dark-green);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Links */
+.signup-link {
+  text-align: center;
+  margin-top: 20px;
+  color: var(--dark-gray);
+  font-size: 15px;
+}
+
+.signup-link a {
+  color: var(--primary-green);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.signup-link a:hover {
+  color: var(--dark-green);
+  text-decoration: underline;
+}
+
+/* Error Message */
+.error-message {
+  color: var(--error-red);
+  font-size: 14px;
+  margin-top: 5px;
+  display: none;
+}
+
+/* Decorations */
+.decor-leaf {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="%231b9e3e" d="M50 0c-10 20-20 30-30 40 10 10 20 20 30 30 10-10 20-20 30-30-10-10-20-20-30-40z" opacity="0.15"/></svg>');
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+
+.decor-leaf.top-left {
+  top: 10%;
+  left: 10%;
+  transform: rotate(-20deg);
+}
+
+.decor-leaf.bottom-right {
+  bottom: 10%;
+  right: 10%;
+  transform: rotate(100deg);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .container {
+      padding: 30px 20px;
+  }
+  
+  h1 {
+      font-size: 22px;
+  }
+  
+  .decor-leaf {
+      width: 80px;
+      height: 80px;
+  }
+  
+  .form-group input,
+  .role-selector select,
+  .btn {
+      padding: 12px 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+      align-items: flex-start;
+      padding-bottom: 40px;
+  }
+  
+  .container {
+      margin: 20px auto;
+  }
+}

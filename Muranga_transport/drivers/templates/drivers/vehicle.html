@@ -1,0 +1,187 @@
+{% extends "drivers/base.html" %}
+{% load static %}
+
+{% block title %}Assigned Vehicle | Municipality Drivers{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'drivers/css/vehicle.css' %}">
+{% endblock %}
+
+{% block content %}
+
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <button class="sidebar-toggle">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="nav-right">
+      <span class="user-greeting">Welcome, Kamau</span>
+      <img src="{% static 'drivers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+    </div>
+  </header>
+
+  <div class="page-header">
+    <h1 class="page-title">Assigned Vehicle</h1>
+    <div class="page-actions">
+      <button class="btn">
+        <i class="fas fa-wrench"></i> Request Maintenance
+      </button>
+    </div>
+  </div>
+
+  <div class="vehicle-container">
+
+    <!-- Left Sidebar - Vehicle Summary -->
+    <div class="vehicle-sidebar">
+      <img src="{% static 'drivers/images/vehicle.jpg' %}" alt="Vehicle" class="vehicle-image">
+      <h2 class="vehicle-title">Toyota Land Cruiser</h2>
+      <p class="vehicle-registration">Registration: KAB 123X</p>
+
+      <div class="vehicle-status">
+        <span class="status-badge status-active">
+          <i class="fas fa-check-circle"></i> Active
+        </span>
+      </div>
+
+      <div class="vehicle-actions">
+        <button class="btn btn-docs">
+          <i class="fas fa-file-alt"></i> View Documents
+        </button>
+        <button class="btn btn-outline btn-scan">
+          <i class="fas fa-qrcode"></i> Scan QR Code
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Content - Detailed Information -->
+    <div class="vehicle-content">
+
+      <!-- Vehicle Information Section -->
+      <div class="vehicle-section">
+        <h2><i class="fas fa-info-circle"></i> Vehicle Information</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Make and Model</div>
+            <div class="info-value">Toyota Land Cruiser V8</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Registration Number</div>
+            <div class="info-value">KAB 123X</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Year of Manufacture</div>
+            <div class="info-value">2022</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Vehicle Type</div>
+            <div class="info-value">4WD SUV</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Engine Number</div>
+            <div class="info-value">1UR-FE 23456789</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Chassis Number</div>
+            <div class="info-value">JTEBU14J604567890</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Color</div>
+            <div class="info-value">White</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Assigned Since</div>
+            <div class="info-value">15 January 2023</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status & Metrics Section -->
+      <div class="vehicle-section">
+        <h2><i class="fas fa-chart-line"></i> Status and Metrics</h2>
+        <div class="progress-container">
+          <div class="progress-item">
+            <div class="progress-header">
+              <span>Fuel Level</span>
+              <span>65%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill fuel-fill"></div>
+            </div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-header">
+              <span>Next Service</span>
+              <span>1,433 km remaining</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill service-fill"></div>
+            </div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-header">
+              <span>Tire Condition</span>
+              <span>45% wear</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill tire-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-grid metrics-grid">
+          <div class="info-item">
+            <div class="info-label">Current Mileage</div>
+            <div class="info-value">124,567 km</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Last Service Mileage</div>
+            <div class="info-value">120,000 km</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Average Fuel Consumption</div>
+            <div class="info-value">8.5 km/l</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Last Refuel Date</div>
+            <div class="info-value">12 June 2025</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Maintenance History Section -->
+      <div class="vehicle-section">
+        <h2><i class="fas fa-history"></i> Maintenance History</h2>
+        <div class="history-container">
+          <div class="history-item">
+            <div class="history-details">
+              <strong>Routine Service</strong>
+              <div>Oil change, filter replacement, brake inspection</div>
+            </div>
+            <div class="history-date">15 May 2025 | 120,000 km</div>
+          </div>
+          <div class="history-item">
+            <div class="history-details">
+              <strong>Tire Replacement</strong>
+              <div>All 4 tires replaced</div>
+            </div>
+            <div class="history-date">2 March 2025 | 115,200 km</div>
+          </div>
+          <div class="history-item">
+            <div class="history-details">
+              <strong>Brake System Repair</strong>
+              <div>Brake pads and rotors replaced</div>
+            </div>
+            <div class="history-date">10 January 2025 | 110,500 km</div>
+          </div>
+        </div>
+      </div>
+
+    </div> 
+
+  </div> 
+
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'drivers/js/vehicle.js' %}"></script>
+{% endblock %}

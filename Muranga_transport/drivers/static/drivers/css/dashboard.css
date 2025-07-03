@@ -1,0 +1,486 @@
+/* Dashboard Specific Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--light-gray);
+    color: var(--black);
+}
+
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background-color: var(--white);
+    position: fixed;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.main-content {
+    margin-left: 250px;
+    padding: 20px;
+}
+
+/* Dashboard Grid Layout */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+}
+
+/* Profile Card */
+.profile-card {
+    background-color: var(--white);
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.profile-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 15px;
+    border: 3px solid var(--primary-light);
+}
+
+.profile-name {
+    font-size: 20px;
+    color: var(--primary-dark);
+    margin-bottom: 5px;
+}
+
+.profile-id {
+    color: var(--dark-gray);
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.profile-details {
+    text-align: left;
+    margin-top: 20px;
+}
+
+.detail-item {
+    margin-bottom: 15px;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: var(--secondary-color);
+    font-size: 14px;
+}
+
+.detail-value {
+    color: var(--black);
+    margin-top: 5px;
+}
+
+/* Dashboard Sections */
+.dashboard-section {
+    margin-bottom: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.section-title {
+    font-size: 18px;
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.see-all {
+    color: var(--primary-color);
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.see-all:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* Notification Styles */
+.notification-bell {
+    position: relative;
+    display: inline-block;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 18px;
+    height: 18px;
+    background-color: #ff0000;
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--white);
+}
+
+.notification-item, .assignment-item, .vehicle-item {
+    background-color: var(--white);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.notification-item.unread {
+    background-color: rgba(46, 125, 50, 0.05);
+    border-left: 3px solid var(--primary-color);
+}
+
+.notification-item:hover, .assignment-item:hover, .vehicle-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.notification-icon, .assignment-icon, .vehicle-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(46, 125, 50, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.notification-content, .assignment-content, .vehicle-content {
+    flex: 1;
+}
+
+.notification-time, .assignment-time, .vehicle-status {
+    color: var(--dark-gray);
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.notification-actions button {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    color: white;
+    font-weight: 500;
+}
+
+.notification-actions button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.notification-actions .view-btn {
+    background-color: var(--info-color);
+}
+
+.notification-actions .accept-btn {
+    background-color: var(--success-color);
+}
+
+.notification-status {
+    color: var(--success-color);
+    font-size: 12px;
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+/* Assignment Status */
+.assignment-status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-upcoming {
+    background-color: rgba(25, 118, 210, 0.1);
+    color: var(--info-color);
+}
+
+.status-in-progress {
+    background-color: rgba(255, 160, 0, 0.1);
+    color: var(--warning-color);
+}
+
+.status-completed {
+    background-color: rgba(56, 142, 60, 0.1);
+    color: var(--success-color);
+}
+
+/* Vehicle Actions */
+.vehicle-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-sm {
+    padding: 8px 12px;
+    font-size: 13px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+    font-weight: 500;
+}
+
+.btn-sm:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.mileage-badge {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    overflow: auto;
+}
+
+.modal-content {
+    background-color: var(--white);
+    margin: 5% auto;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    animation: modalopen 0.3s;
+}
+
+/* New Accept Task Modal */
+.accept-task-modal {
+    background-color: var(--white);
+    margin: 15% auto;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    animation: modalopen 0.3s;
+    text-align: center;
+}
+
+.accept-task-modal h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: var(--black);
+}
+
+.accept-task-modal p {
+    margin-bottom: 25px;
+    color: var(--dark-gray);
+    line-height: 1.5;
+}
+
+.modal-divider {
+    height: 1px;
+    background-color: var(--medium-gray);
+    margin: 20px 0;
+}
+
+.modal-time {
+    font-size: 12px;
+    color: var(--dark-gray);
+    margin-top: 15px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.modal-btn {
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 100px;
+}
+
+.modal-btn-cancel {
+    background-color: transparent;
+    border: 1px solid var(--medium-gray);
+    color: var(--dark-gray);
+}
+
+.modal-btn-cancel:hover {
+    background-color: var(--light-gray);
+}
+
+.modal-btn-confirm {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.modal-btn-confirm:hover {
+    background-color: var(--primary-dark);
+}
+
+@keyframes modalopen {
+    from {opacity: 0; transform: translateY(-20px);}
+    to {opacity: 1; transform: translateY(0);}
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 24px;
+    color: var(--dark-gray);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.close-btn:hover {
+    color: var(--black);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--secondary-color);
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+    font-family: 'Poppins', sans-serif;
+}
+
+textarea.form-control {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-outline {
+    background-color: transparent;
+    border: 1px solid var(--medium-gray);
+    color: var(--dark-gray);
+}
+
+.btn-outline:hover {
+    background-color: var(--light-gray);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .notification-item, .assignment-item, .vehicle-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .notification-icon, .assignment-icon, .vehicle-icon {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .notification-actions, .vehicle-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

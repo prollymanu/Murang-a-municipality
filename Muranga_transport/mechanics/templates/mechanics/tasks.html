@@ -1,0 +1,120 @@
+{% extends "mechanics/base.html" %}
+{% load static %}
+{% block title %}My Tasks | Municipality Mechanics{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mechanics/css/tasks.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<form style="display:none;">{% csrf_token %}</form>
+
+<header class="top-nav">
+  <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
+  <div class="nav-right">
+    <span class="user-greeting">Welcome, {{ mechanic.full_name }}</span>
+    <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="User" class="user-avatar">
+  </div>
+</header>
+
+<div class="page-header">
+  <h1 class="page-title">My Tasks</h1>
+</div>
+
+<div class="card">
+  <form method="get" class="task-filters">
+    <div class="filter-group">
+      <label for="status">Status</label>
+      <select id="status" name="status" onchange="this.form.submit()">
+        <option value="">All Statuses</option>
+        <option value="pending" {% if request.GET.status == "pending" %}selected{% endif %}>Pending</option>
+        <option value="in_progress" {% if request.GET.status == "in_progress" %}selected{% endif %}>In Progress</option>
+        <option value="completed" {% if request.GET.status == "completed" %}selected{% endif %}>Completed</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="priority">Priority</label>
+      <select id="priority" name="priority" onchange="this.form.submit()">
+        <option value="">All Priorities</option>
+        <option value="high" {% if request.GET.priority == "high" %}selected{% endif %}>High</option>
+        <option value="medium" {% if request.GET.priority == "medium" %}selected{% endif %}>Medium</option>
+        <option value="low" {% if request.GET.priority == "low" %}selected{% endif %}>Low</option>
+      </select>
+    </div>
+  </form>
+
+  <div class="task-list">
+    {% if tasks %}
+      {% for task in tasks %}
+        <div class="task-item" style="border-left: 5px solid {% if task.priority == 'high' %}var(--danger-color){% elif task.priority == 'medium' %}var(--warning-color){% else %}var(--success-color){% endif %};">
+          <div class="task-header">
+            <div>
+              <h3 class="task-title">
+                {{ task.maintenance_request.vehicle.number_plate }} - {{ task.maintenance_request.vehicle.vehicle_type }}
+                <span class="task-status status-{{ task.status }}">{{ task.get_status_display }}</span>
+              </h3>
+              <div class="task-id">Request ID: {{ task.maintenance_request.request_id }}</div>
+              <div class="task-unique-id">Unique Task ID: {{ task.unique_task_id }}</div>
+            </div>
+            <div class="task-priority priority-{{ task.priority }}">
+              {{ task.get_priority_display }} Priority
+            </div>
+          </div>
+
+          <div class="task-details">
+            <div class="detail-row">
+              <div class="detail-label">Location:</div>
+              <div class="detail-value">{{ task.maintenance_request.vehicle.location }}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Submitted At:</div>
+              <div class="detail-value">{{ task.maintenance_request.submitted_at|date:"d M Y H:i" }}</div>
+            </div>
+          </div>
+
+          <div class="progress-container">
+            <div class="progress-label">
+              <span>Completion Progress</span>
+              <span>{{ task.progress }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: {{ task.progress }}%;"></div>
+            </div>
+          </div>
+
+          <div class="task-actions">
+            <a href="{% url 'mechanics:task_detail' task.pk %}" class="btn btn-details">View Details</a>
+            
+            <button class="btn-update-progress"
+                    data-task-id="{{ task.id }}"
+                    data-update-url="{% url 'mechanics:update_task_progress' task.id %}">
+              Update Progress
+            </button>
+
+            {% if task.status != 'completed' %}
+            <button class="btn-complete-task"
+                    data-task-id="{{ task.id }}"
+                    data-complete-url="{% url 'mechanics:complete_task' task.id %}">
+              Mark Complete
+            </button>
+            {% endif %}
+
+            {% if task.status == 'in_progress' or task.status == 'completed' %}
+            <a href="{% url 'mechanics:submit_invoice' task.id %}" class="btn btn-invoice">Submit Invoice</a>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="no-tasks">No tasks found matching your filters.</div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'mechanics/js/tasks.js' %}"></script>
+{% endblock %}
+

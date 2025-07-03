@@ -1,0 +1,138 @@
+{% extends "drivers/base.html" %}
+{% load static %}
+
+{% block title %}Edit Profile | Municipality Drivers{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'drivers/css/profile.css' %}">
+  <link rel="stylesheet" href="{% static 'drivers/css/profile_edit.css' %}">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+
+<div class="profile-edit-container">
+  <div class="edit-profile-card">
+    <div class="profile-header">
+      <h1>Edit Profile</h1>
+      <div class="profile-image-upload">
+        {% if driver.profile_image %}
+          <img src="{{ driver.profile_image.url }}" alt="Profile Image" class="profile-img" id="profileImage">
+        {% else %}
+          <img src="{% static 'drivers/images/default-profile.png' %}" alt="Profile Image" class="profile-img" id="profileImage">
+        {% endif %}
+        <label for="profile_image" class="upload-btn">
+          <i class="fas fa-camera"></i>
+        </label>
+        <input type="file" id="profile_image" name="profile_image" accept="image/*" style="display: none;">
+      </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label for="driver_id">Driver ID</label>
+        <input type="text" name="driver_id" id="driver_id" class="form-control" 
+               value="{{ driver.driver_id }}" readonly>
+        <small class="form-text">Your unique driver identification number</small>
+      </div>
+
+      <div class="form-group">
+        <label for="full_name">Full Name</label>
+        <input type="text" name="full_name" id="full_name" class="form-control"
+          value="{{ driver.user.get_full_name }}" required>
+      </div>
+
+      <div class="form-section">
+        <h3>Contact Information</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="phone_number">Phone Number</label>
+            <div class="input-group">
+              <span class="input-group-text">+254</span>
+              <input type="text" name="phone_number" id="phone_number" class="form-control"
+                value="{{ driver.phone_number }}" pattern="[0-9]{9}" title="Enter 9 digits without the leading 0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" name="email" id="email" class="form-control"
+              value="{{ driver.user.email }}" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>License Information</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="license_class">License Class(es)</label>
+            <select name="license_class" id="license_class" class="form-control select2-multiple" multiple="multiple" required>
+              <option value="A" {% if 'A' in license_class_list %}selected{% endif %}>A - Motorcycle</option>
+              <option value="B" {% if 'B' in license_class_list %}selected{% endif %}>B - Personal Vehicle</option>
+              <option value="C" {% if 'C' in license_class_list %}selected{% endif %}>C - Light Commercial</option>
+              <option value="D" {% if 'D' in license_class_list %}selected{% endif %}>D - Heavy Commercial</option>
+              <option value="E" {% if 'E' in license_class_list %}selected{% endif %}>E - Heavy Articulated</option>
+              <option value="F" {% if 'F' in license_class_list %}selected{% endif %}>F - Construction Equipment</option>
+              <option value="G" {% if 'G' in license_class_list %}selected{% endif %}>G - Agricultural Tractor</option>
+            </select>
+            <small class="form-text">Select all that apply</small>
+          </div>
+
+          <div class="form-group">
+            <label for="experience">Experience (Years)</label>
+            <input type="number" name="experience" id="experience" class="form-control"
+              value="{{ driver.experience_years }}" min="0" max="50">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Employment Information</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="department">Department</label>
+            <input type="text" name="department" id="department" class="form-control"
+              value="{{ driver.department }}">
+          </div>
+
+          <div class="form-group">
+            <label for="supervisor">Supervisor</label>
+            <input type="text" name="supervisor" id="supervisor" class="form-control"
+              value="{{ driver.supervisor }}">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Vehicle Assignment</h3>
+        <div class="form-group">
+          <label for="current_vehicle">Current Vehicle</label>
+          <input type="text" name="current_vehicle" id="current_vehicle" class="form-control"
+            value="{{ driver.current_vehicle }}">
+          <small class="form-text">Leave blank if not currently assigned a vehicle</small>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="{% url 'drivers:profile' %}" class="btn-modern btn-cancel">
+          <i class="fas fa-times"></i> Cancel
+        </a>
+        <button type="submit" class="btn-modern btn-save">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="{% static 'drivers/js/profile_edit.js' %}"></script>
+{% endblock %}

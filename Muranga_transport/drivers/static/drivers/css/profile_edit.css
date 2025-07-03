@@ -1,0 +1,215 @@
+/* Profile Edit Styles */
+.profile-edit-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.edit-profile-card {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 2.5rem;
+    transition: all 0.3s ease;
+}
+
+.edit-profile-card:hover {
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+}
+
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.profile-header h1 {
+    font-size: 1.8rem;
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+.profile-image-upload {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.profile-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-light);
+}
+
+.upload-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: var(--primary-color);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section h3 {
+    font-size: 1.2rem;
+    color: var(--secondary-color);
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.form-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: var(--secondary-color);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-control {
+    border: 1px solid var(--medium-gray);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.2);
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+}
+
+.input-group-text {
+    background: var(--light-gray);
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--medium-gray);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    font-size: 0.95rem;
+}
+
+.input-group .form-control {
+    border-radius: 0 8px 8px 0;
+}
+
+.select2-container--bootstrap4 .select2-selection--multiple {
+    min-height: 42px;
+    padding: 0.375rem 0.75rem;
+    border-radius: 8px !important;
+}
+
+.select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice {
+    background: var(--primary-color);
+    border: none;
+    color: white;
+    border-radius: 4px;
+    padding: 0 8px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-modern {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel {
+    background: var(--light-gray);
+    color: var(--secondary-color);
+    border: 1px solid var(--medium-gray);
+}
+
+.btn-cancel:hover {
+    background: var(--medium-gray);
+    color: var(--black);
+}
+
+.btn-save {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.btn-save:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .profile-edit-container {
+        padding: 1rem;
+    }
+    
+    .edit-profile-card {
+        padding: 1.5rem;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .profile-image-upload {
+        margin-top: 1rem;
+    }
+}

@@ -1,0 +1,71 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Mechanic Dashboard{% endblock %}</title>
+
+  <!-- Common Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <!-- Common Styles -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'mechanics/css/base.css' %}">
+
+  <!-- Page-specific Styles -->
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="top-nav">
+    <button class="sidebar-toggle" id="sidebarToggle">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="nav-right">
+      <span class="user-greeting">Welcome, {{ mechanic.get_full_name }}</span>
+      <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="User" class="user-avatar">
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="Murang'a Logo">
+      <h3>Municipality<span>®</span> | MECHANIC</h3>
+    </div>
+    <nav class="sidebar-nav">
+      <ul>
+        <li><a href="{% url 'mechanics:dashboard' %}"><i class="fas fa-tachometer-alt"></i>Dashboard</a></li>
+        <li><a href="{% url 'mechanics:profile' %}"><i class="fas fa-user"></i>My Profile</a></li>
+        <li><a href="{% url 'mechanics:notifications' %}"><i class="fas fa-bell"></i>Notifications</a></li>
+        <li><a href="{% url 'mechanics:tasks' %}"><i class="fas fa-tasks"></i>My Tasks</a></li>
+        <li><a href="{% url 'mechanics:invoices' %}"><i class="fas fa-file-invoice"></i>My Invoices</a></li>
+        <li><a href="{% url 'mechanics:repair_invoice_generic' %}"><i class="fas fa-tools"></i>Submit Repair Invoice</a></li>
+        <li><a href="{% url 'mechanics:support' %}"><i class="fas fa-headset"></i>Support</a></li>
+        <li>
+          <form action="{% url 'core:logout' %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" style="background: none; border: none; color: inherit; font: inherit; cursor: pointer; padding: 0; display: flex; align-items: center;">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+          </form>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- Common JS -->
+  <script src="{% static 'mechanics/js/main.js' %}"></script>
+
+  <!-- Page-specific JS -->
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,39 @@
+{% extends "mechanics/base.html" %}
+
+{% load static %}
+
+{% block title %}Notifications | Municipality Mechanics{% endblock %}
+
+{% block content %}
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <button class="sidebar-toggle">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="nav-right">
+      <span class="user-greeting">Welcome, Skeff</span>
+      <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="User" class="user-avatar">
+    </div>
+  </header>
+
+  <div class="notification-header">
+    <h1 class="notification-title">
+      <i class="fas fa-bell notification-bell"></i>
+      Notifications
+      <span class="notification-badge-count" id="unreadCount">3</span>
+    </h1>
+    <button class="mark-all-read" id="markAllRead">Mark All as Read</button>
+  </div>
+
+  <div class="notification-list" id="notificationList">
+    <!-- Notifications will be loaded here dynamically -->
+  </div>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'mechanics/css/notifications.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'mechanics/js/notifications.js' %}"></script>
+{% endblock %}

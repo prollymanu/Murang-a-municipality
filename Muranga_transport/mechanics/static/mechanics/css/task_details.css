@@ -1,0 +1,70 @@
+.task-detail-card {
+    padding: 25px;
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+  }
+  
+  .task-title {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+  }
+  
+  .task-status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: var(--white);
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  
+  .status-pending { background: var(--warning-color); }
+  .status-in_progress { background: var(--primary-color); }
+  .status-completed { background: var(--success-color); }
+  
+  .task-info p {
+    margin: 8px 0;
+    font-size: 1rem;
+    color: var(--text-dark);
+  }
+  
+  .progress-section {
+    margin-top: 25px;
+  }
+  
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+  
+  .progress-bar {
+    width: 100%;
+    height: 12px;
+    background: var(--light-gray);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: var(--primary-color);
+  }
+  
+  .notes-section {
+    margin-top: 30px;
+  }
+  
+  .notes-section h3 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+  }
+  
+  .actions {
+    margin-top: 30px;
+    text-align: right;
+  }
+  

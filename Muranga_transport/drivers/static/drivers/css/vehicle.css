@@ -1,0 +1,185 @@
+/* Vehicle Page Specific Styles */
+.vehicle-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 30px;
+}
+
+.vehicle-sidebar {
+    background-color: var(--white);
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    height: fit-content;
+}
+
+.vehicle-image {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    object-fit: cover;
+    height: 180px;
+}
+
+.vehicle-title {
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.vehicle-registration {
+    text-align: center;
+    color: var(--dark-gray);
+    margin-bottom: 20px;
+}
+
+.vehicle-status {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.vehicle-actions {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vehicle-actions .btn {
+    width: 100%;
+}
+
+.vehicle-content {
+    background-color: var(--white);
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.vehicle-section {
+    margin-bottom: 30px;
+}
+
+.vehicle-section h2 {
+    color: var(--primary-dark);
+    font-size: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.metrics-grid {
+    margin-top: 20px;
+}
+
+.info-item {
+    margin-bottom: 15px;
+}
+
+.info-label {
+    font-weight: 500;
+    color: var(--secondary-color);
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.info-value {
+    color: var(--black);
+    padding: 10px;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.status-active {
+    background-color: rgba(46, 125, 50, 0.1);
+    color: var(--success-color);
+}
+
+.status-maintenance {
+    background-color: rgba(255, 160, 0, 0.1);
+    color: var(--warning-color);
+}
+
+.progress-container {
+    margin-top: 20px;
+}
+
+.progress-item {
+    margin-bottom: 15px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.progress-bar {
+    height: 8px;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 4px;
+}
+
+.fuel-fill {
+    background-color: var(--success-color);
+    width: 65%;
+}
+
+.service-fill {
+    background-color: var(--info-color);
+    width: 85%;
+}
+
+.tire-fill {
+    background-color: var(--warning-color);
+    width: 45%;
+}
+
+.history-container {
+    border-top: 1px solid var(--medium-gray);
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-details {
+    flex: 1;
+}
+
+.history-date {
+    color: var(--dark-gray);
+    font-size: 14px;
+}
+
+@media (max-width: 992px) {
+    .vehicle-container {
+        grid-template-columns: 1fr;
+    }
+}

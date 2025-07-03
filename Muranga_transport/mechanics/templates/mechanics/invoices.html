@@ -1,0 +1,125 @@
+{% extends "mechanics/base.html" %}
+{% load static %}
+{% block title %}My Invoices{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mechanics/css/invoices.css' %}">
+{% endblock %}
+{% block content %}
+<header class="top-nav">
+  <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
+  <div class="nav-right">
+    <span class="user-greeting">Welcome, {{ mechanic.full_name }}</span>
+    <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="User" class="user-avatar">
+  </div>
+</header>
+
+<div class="page-header">
+  <h1 class="page-title">My Invoices</h1>
+</div>
+
+<div class="card">
+  <div class="summary-cards">
+    <div class="summary-card total-paid">
+      <h3>Total Paid</h3>
+      <p class="amount">Ksh {{ total_paid|floatformat:2 }}</p>
+      <small>
+        {% if selected_period == '30d' %}Last 30 days
+        {% elif selected_period == '6m' %}Last 6 months
+        {% else %}All time{% endif %}
+      </small>
+    </div>
+    <div class="summary-card pending-payments">
+      <h3>Pending Payments</h3>
+      <p class="amount">Ksh {{ pending_total|floatformat:2 }}</p>
+      <small>{{ page_obj.paginator.count }} invoices</small>
+    </div>
+  </div>
+
+  <div class="export-options">
+    <a class="btn-export" href="{% url 'mechanics:export_invoices_pdf' %}" onclick="return confirm('Are you sure you want to export as PDF?')">
+      <i class="fas fa-file-pdf"></i> Export as PDF
+    </a>
+    <a class="btn-export" href="{% url 'mechanics:export_invoices_excel' %}" onclick="return confirm('Are you sure you want to export as Excel?')">
+      <i class="fas fa-file-excel"></i> Export as Excel
+    </a>
+  </div>
+
+  <div class="invoice-filters">
+    <div class="filter-group">
+      <label for="status-filter">Status</label>
+      <select id="status-filter">
+        <option value="">All</option>
+        <option value="paid">Paid</option>
+        <option value="pending">Pending</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Date Range</label>
+      <input type="date" id="start-date"> to
+      <input type="date" id="end-date">
+      <button id="filter-button">Filter</button>
+    </div>
+    <div class="search-box filter-group">
+      <label>Search</label>
+      <input type="text" id="invoice-search" placeholder="Search invoices...">
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="invoice-table">
+      <thead>
+        <tr>
+          <th>Invoice #</th>
+          <th>Date</th>
+          <th>Task ID</th>
+          <th>Vehicle</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for invoice in page_obj %}
+        <tr>
+          <td>{{ invoice.id }}</td>
+          <td>{{ invoice.created_at|date:"d M Y" }}</td>
+          <td>{% if invoice.mechanic_task %}{{ invoice.mechanic_task.id }}{% else %}N/A{% endif %}</td>
+          <td>{{ invoice.vehicle_number }}</td>
+          <td>Ksh {{ invoice.total_cost|floatformat:2 }}</td>
+          <td><span class="invoice-status {% if invoice.status == 'paid' %}status-paid{% else %}status-pending{% endif %}">{{ invoice.status|title }}</span></td>
+          <td>
+            <a class="btn-download" href="{% url 'mechanics:download_invoice' invoice.id %}" onclick="return confirm('Download invoice #{{ invoice.id }}?')">
+              <i class="fas fa-download"></i>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">No invoices found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}">&laquo; Prev</a>
+    {% endif %}
+    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}">Next &raquo;</a>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'mechanics/js/invoices.js' %}"></script>
+<script>
+// Initialize event listeners when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('filter-button').addEventListener('click', applyFilters);
+  document.getElementById('invoice-search').addEventListener('keyup', searchInvoices);
+});
+</script>
+{% endblock %}

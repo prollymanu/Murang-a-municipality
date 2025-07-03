@@ -1,0 +1,113 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Murang'a County - Sign Up</title>
+  <link rel="stylesheet" href="{% static 'core/css/register.css' %}">
+</head>
+<body>
+  <div class="decor-leaf top-left"></div>
+  <div class="decor-leaf bottom-right"></div>
+
+  <div class="container">
+    <div class="logo-container">
+      <img src="{% static 'core/images/murangalogo.png' %}" alt="Murang'a County Logo" class="logo">
+    </div>
+
+    <h1>Create Your Account</h1>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% if error %}<div class="error-message">{{ error }}</div>{% endif %}
+    {% if success %}<div class="success-message">{{ success }}</div>{% endif %}
+
+    <form id="signupForm" class="signup-form" method="post" action="{% url 'core:register' %}">
+      {% csrf_token %}
+
+      <div class="role-selector">
+        <label for="role">I am a:</label>
+        <select id="role" name="role" required>
+          <option value="" disabled selected>Select your role</option>
+          <option value="driver">Driver</option>
+          <option value="mechanic">Mechanic</option>
+        </select>
+      </div>
+
+      <!-- Common Fields -->
+      <div class="form-group">
+        <label for="fullName">Full Names:</label>
+        <input type="text" id="fullName" name="fullName" required placeholder="Enter your full name">
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required placeholder="Enter your email">
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone Number:</label>
+        <input type="tel" id="phone" name="phone" required placeholder="Enter phone number">
+      </div>
+
+      <!-- Driver Fields -->
+      <div id="driverFields" class="role-fields" style="display: none;">
+        <div class="form-group">
+          <label for="license">Driver's License Number:</label>
+          <input type="text" id="license" name="license" placeholder="Enter license number">
+        </div>
+        <div class="form-group">
+          <label for="idNumber">ID Number:</label>
+          <input type="text" id="idNumber" name="idNumber" placeholder="Enter national ID">
+        </div>
+        <div class="form-group">
+          <label for="location">Location:</label>
+          <input type="text" id="location" name="location" placeholder="Enter location">
+        </div>
+      </div>
+
+      <!-- Mechanic Fields -->
+      <div id="mechanicFields" class="role-fields" style="display: none;">
+        <div class="form-group">
+          <label for="idNumberMech">ID Number:</label>
+          <input type="text" id="idNumberMech" name="idNumber" placeholder="Enter national ID">
+        </div>
+        <div class="form-group">
+          <label for="locationMech">Garage Location:</label>
+          <input type="text" id="locationMech" name="location" placeholder="Enter garage location">
+        </div>
+      </div>
+
+      <!-- Common Password Fields -->
+      <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" placeholder="Create password">
+        <!-- eye icon will be auto-added by JS -->
+      </div>
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password:</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm password">
+        <!-- eye icon will be auto-added by JS -->
+      </div>
+
+      <div class="terms-checkbox">
+        <input type="checkbox" id="terms" name="terms" required>
+        <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+      </div>
+
+      <button type="submit" class="btn">Sign Up</button>
+
+      <p class="signup-link">Already have an account? <a href="{% url 'core:login' %}">Log in</a></p>
+    </form>
+  </div>
+
+  <script src="{% static 'core/js/register.js' %}"></script>
+</body>
+</html>

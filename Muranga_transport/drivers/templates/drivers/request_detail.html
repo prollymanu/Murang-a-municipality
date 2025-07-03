@@ -1,0 +1,32 @@
+{% extends "drivers/base.html" %}
+{% load static %}
+
+{% block title %}Maintenance Request Details{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'drivers/css/request_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>Maintenance Request #{{ request_obj.id }}</h1>
+
+  <div><strong>Vehicle:</strong> {{ request_obj.vehicle }}</div>
+  <div><strong>Status:</strong> {{ request_obj.get_status_display }}</div>
+  <div><strong>Mileage:</strong> {{ request_obj.mileage }} km</div>
+  <div><strong>Submitted:</strong> {{ request_obj.submitted_at }}</div>
+  <div><strong>Issues:</strong></div>
+  <ul>
+    {% for issue in request_obj.issues.all %}
+      <li>
+        <strong>{{ issue.title }}</strong><br>
+        {{ issue.description }}<br>
+        <em>Priority:</em> {{ issue.get_priority_display }} |
+        <em>Estimated Cost:</em> KSh {{ issue.cost_estimate }}
+      </li>
+    {% endfor %}
+  </ul>
+
+  <a href="{% url 'drivers:maintenance' %}" class="btn btn-outline">Back to List</a>
+</div>
+{% endblock %}

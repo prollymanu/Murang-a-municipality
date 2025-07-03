@@ -1,0 +1,120 @@
+{% extends "mechanics/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'mechanics/css/profile.css' %}">
+{% endblock %}
+
+{% block title %}My Profile | Municipality Mechanics{% endblock %}
+
+{% block content %}
+<!-- Top Navigation Bar -->
+<header class="top-nav">
+  <button class="sidebar-toggle">
+    <i class="fas fa-bars"></i>
+  </button>
+  <div class="nav-right">
+    <span class="user-greeting">Welcome, {{ mechanic.full_name }}</span>
+    <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="User" class="user-avatar">
+  </div>
+</header>
+
+<div class="page-header">
+  <h1 class="page-title">My Profile</h1>
+</div>
+
+<div class="profile-container">
+  <!-- Left Sidebar - Profile Summary -->
+  <div class="profile-sidebar">
+    <img src="{% static 'mechanics/images/profile-photo.JPG' %}" alt="Profile Picture" class="profile-picture">
+    <h2 style="text-align: center;">{{ mechanic.full_name }}</h2>
+    <p style="text-align: center; color: var(--dark-gray); margin-bottom: 20px;">ID: {{ mechanic.mechanic_id }}</p>
+
+    <div class="profile-actions">
+      <a href="{% url 'mechanics:profile_edit' %}" class="edit-btn">
+        <i class="fas fa-edit"></i> Edit Profile
+      </a>
+    </div>
+  </div>
+
+  <!-- Right Content - Detailed Information -->
+  <div class="profile-content">
+    <!-- Personal Information Section -->
+    <div class="profile-section">
+      <h2><i class="fas fa-id-card"></i> Personal Information</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Full Name</div>
+          <div class="info-value">{{ mechanic.full_name }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Mechanic ID</div>
+          <div class="info-value">{{ mechanic.mechanic_id }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Phone Number</div>
+          <div class="info-value">{{ mechanic.user.phone_number }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Email Address</div>
+          <div class="info-value">{{ mechanic.user.email }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Location</div>
+          <div class="info-value">{{ mechanic.location }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Experience</div>
+          <div class="info-value">{{ mechanic.experience_years }} years</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Professional Information Section -->
+    <div class="profile-section">
+      <h2><i class="fas fa-briefcase"></i> Professional Information</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Specializations</div>
+          <div class="info-value">
+            {% if mechanic.specialization_list %}
+              {% for spec in mechanic.specialization_list %}
+                <span class="badge">{{ spec|capfirst }}</span>
+              {% endfor %}
+            {% else %}
+              N/A
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="info-item">
+          <div class="info-label">Supervisor</div>
+          <div class="info-value">{{ mechanic.supervisor_name|default:"N/A" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Work History Section -->
+    <div class="profile-section">
+      <h2><i class="fas fa-history"></i> Recent Work History</h2>
+      {% if recent_tasks %}
+        {% for task in recent_tasks %}
+          <div class="history-item">
+            <div class="history-details">
+              <strong>{{ task.vehicle.number_plate }} - {{ task.last_update|truncatewords:10 }}</strong>
+              <div>Status: {{ task.get_status_display }}</div>
+            </div>
+            <div class="history-date">Completed: {{ task.submitted_at|date:"d M Y" }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p style="padding: 10px;">No recent work history available.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'mechanics/js/profile.js' %}"></script>
+{% endblock %}

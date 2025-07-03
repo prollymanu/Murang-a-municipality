@@ -1,0 +1,103 @@
+{% extends "mechanics/base.html" %}
+{% load static %}
+
+{% block title %}Mechanic Dashboard{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'mechanics/css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Top Navigation Bar -->
+<header class="top-nav">
+  <button class="sidebar-toggle">
+    <i class="fas fa-bars"></i>
+  </button>
+  <div class="nav-right">
+    <span class="user-greeting">{{ greeting }}, {{ mechanic.full_name|default:name }}!</span>
+    <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="User" class="user-avatar">
+  </div>
+</header>
+
+<div class="page-header">
+  <h1 class="page-title">Mechanic Dashboard</h1>
+</div>
+
+<div class="dashboard-grid">
+  <!-- Profile Card -->
+  <div class="profile-card">
+    <img src="{% static 'mechanics/images/profile-photo.JPG' %}" alt="Mechanic" class="profile-img">
+    <h2 class="profile-name">{{ mechanic.full_name }}</h2>
+    <div class="profile-id">ID: {{ mechanic.mechanic_id }}</div>
+
+    <div class="profile-details">
+      <div class="detail-item">
+        <div class="detail-label">Experience</div>
+        <div class="detail-value">{{ mechanic.experience_years }} years</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Location</div>
+        <div class="detail-value">{{ mechanic.location }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Tasks Completed</div>
+        <div class="detail-value">{{ tasks_completed }}</div>
+      </div>
+    </div>
+
+    <div class="profile-actions">
+      <a href="{% url 'mechanics:profile_edit' %}" class="edit-btn">
+        <i class="fas fa-edit"></i> Edit Profile
+      </a>
+    </div>
+  </div>
+
+  <!-- Dashboard Content (Notifications & Tasks) -->
+  <div>
+    <!-- Notifications Section -->
+    <div class="dashboard-section" id="notificationsSection">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="notification-bell">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" id="notificationBadge">0</span>
+          </span>
+          Notifications
+        </h2>
+        <a href="#" class="see-all">Coming Soon</a>
+      </div>
+    </div>
+
+    <!-- Tasks Section -->
+    <div class="dashboard-section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-tasks"></i> Assigned Tasks</h2>
+        <a href="{% url 'mechanics:tasks' %}" class="see-all">See All</a>
+      </div>
+
+      {% if assigned_tasks %}
+        {% for task in assigned_tasks %}
+          <div class="task-item">
+            <div class="task-content">
+              <h3>{{ task.vehicle.number_plate }}</h3>
+              <p><strong>Submitted:</strong> {{ task.submitted_at|date:"M d, Y" }}</p>
+              <p><strong>Status:</strong> {{ task.get_status_display }}</p>
+            </div>
+            <div class="job-actions">
+              <a href="{% url 'mechanics:task_detail' task.id %}" class="btn-sm">View Task</a>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="no-tasks">No new assigned tasks.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'mechanics/js/dashboard.js' %}"></script>
+{% endblock %}
+

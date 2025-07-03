@@ -1,0 +1,58 @@
+{% extends "mechanics/base.html" %}
+{% load static %}
+
+{% block title %}Edit Profile | Municipality Mechanics{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'mechanics/css/profile_edit.css' %}">
+{% endblock %}
+
+{% block content %}
+<header class="top-nav">
+  <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
+  <div class="nav-right">
+    <span class="user-greeting">Editing Profile: {{ mechanic.full_name }}</span>
+    <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="User" class="user-avatar">
+  </div>
+</header>
+
+<div class="page-header">
+  <h1 class="page-title">Edit My Profile</h1>
+</div>
+
+<div class="edit-profile-container">
+  <form method="post" action="{% url 'mechanics:profile_edit' %}" class="edit-profile-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="error">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="form-group">
+      <label>Mechanic ID</label>
+      <input type="text" value="{{ mechanic.mechanic_id }}" readonly class="readonly-field">
+    </div>
+
+    {% for field in form %}
+      <div class="form-group{% if field.errors %} has-error{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}
+          <small class="help-text">{{ field.help_text }}</small>
+        {% endif %}
+        {% for error in field.errors %}
+          <span class="error">{{ error }}</span>
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="btn"><i class="fas fa-save"></i> Save Changes</button>
+    <a href="{% url 'mechanics:profile' %}" class="btn cancel-btn">Cancel</a>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'mechanics/js/profile_edit.js' %}"></script>
+{% endblock %}
+
+

@@ -1,0 +1,85 @@
+/* Form Section Styles */
+.form-section {
+    background: #fff;
+    padding: 2rem;
+    margin-top: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Issue Row Grid Layout - Updated for 5 columns */
+.issue-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr auto; /* Added extra column for new field */
+    gap: 10px;
+    margin-bottom: 1rem;
+    align-items: center; /* Added vertical alignment */
+}
+
+/* Remove Button Styles */
+.btn-remove {
+    background: none;
+    border: none;
+    color: #dc3545; /* Danger color */
+    cursor: pointer;
+    padding: 5px;
+    font-size: 16px;
+    transition: color 0.2s ease;
+}
+
+.btn-remove:hover {
+    color: #c82333; /* Darker red on hover */
+}
+
+/* Add Issue Button */
+.add-issue-btn {
+    margin-top: 1rem;
+}
+
+/* Form Controls */
+.form-control {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+/* Button Styles */
+.btn {
+    padding: 0.5rem 1rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn:hover {
+    background: #0069d9;
+}
+
+/* Outline Button Variant */
+.btn-outline {
+    background: transparent;
+    border: 1px solid #007bff;
+    color: #007bff;
+    transition: all 0.2s ease;
+}
+
+.btn-outline:hover {
+    background: rgba(0, 123, 255, 0.1);
+}
+
+/* Form Actions */
+.form-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+}

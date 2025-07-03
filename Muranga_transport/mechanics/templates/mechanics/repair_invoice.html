@@ -1,0 +1,71 @@
+{% extends "mechanics/base.html" %}
+{% load static %}
+
+{% block title %}Repair Invoice | Municipality Mechanics{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mechanics/css/repair_invoice.css' %}">
+{% endblock %}
+
+{% block content %}
+<header class="top-nav">
+  <button class="sidebar-toggle">
+    <i class="fas fa-bars"></i>
+  </button>
+  <div class="nav-right">
+    <span class="user-greeting">Welcome, {{ mechanic.full_name }}</span>
+    <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="User" class="user-avatar">
+  </div>
+</header>
+
+<div class="page-header">
+  <h1 class="page-title">Submit Repair Invoice{% if task %} for {{ task.maintenance_request.vehicle.number_plate }}{% endif %}</h1>
+</div>
+
+{% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="card">
+  <form id="repairForm" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="form-group">
+      <label for="{{ form.vehicle_number.id_for_label }}">Vehicle Plate</label>
+      {{ form.vehicle_number }}
+      {{ form.vehicle_number.errors }}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.issues.id_for_label }}">Issues</label>
+      {{ form.issues }}
+      {{ form.issues.errors }}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.total_cost.id_for_label }}">Total Cost (Ksh)</label>
+      {{ form.total_cost }}
+      {{ form.total_cost.errors }}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.date_of_service.id_for_label }}">Date of Service</label>
+      {{ form.date_of_service }}
+      {{ form.date_of_service.errors }}
+    </div>
+
+    <div class="form-group">
+      <label for="photos">Attach Photos (Optional)</label>
+      <input type="file" name="photos" id="photos" multiple class="form-control">
+      <small class="form-text text-muted">Allowed: JPG, PNG, PDF. Max size: 5MB each.</small>
+    </div>
+
+    <button type="submit" class="btn">Submit Invoice</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "drivers/base.html" %}
+{% load static %}
+
+{% block title %}Maintenance Requests | Municipality Drivers{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'drivers/css/maintenance.css' %}">
+{% endblock %}
+
+{% block content %}
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">Maintenance Requests</h1>
+    <div class="page-actions">
+      <a href="{% url 'drivers:new_request' %}" class="btn">
+        <i class="fas fa-plus"></i> New Request
+      </a>
+    </div>
+  </div>
+
+  <!-- Maintenance Filters and Search -->
+  <div class="maintenance-filters">
+    <a href="{% url 'drivers:maintenance' %}" class="filter-btn {% if not status_filter %}active{% endif %}">All</a>
+    <a href="?status=pending" class="filter-btn {% if status_filter == 'pending' %}active{% endif %}">Pending</a>
+    <a href="?status=approved" class="filter-btn {% if status_filter == 'approved' %}active{% endif %}">Approved</a>
+    <a href="?status=in_progress" class="filter-btn {% if status_filter == 'in_progress' %}active{% endif %}">In Progress</a>
+    <a href="?status=completed" class="filter-btn {% if status_filter == 'completed' %}active{% endif %}">Completed</a>
+  </div>
+
+  <form method="GET" class="filter-form">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search..." class="form-control">
+    <select name="sort" class="form-control">
+      <option value="submitted_at" {% if sort == 'submitted_at' %}selected{% endif %}>Newest First</option>
+      <option value="-submitted_at" {% if sort == '-submitted_at' %}selected{% endif %}>Oldest First</option>
+      <option value="status" {% if sort == 'status' %}selected{% endif %}>Status (A-Z)</option>
+      <option value="-status" {% if sort == '-status' %}selected{% endif %}>Status (Z-A)</option>
+    </select>
+    <button type="submit" class="btn">Apply</button>
+  </form>
+
+  <!-- Requests List -->
+  <div class="requests-list">
+    {% if maintenance_requests %}
+      {% for request in maintenance_requests %}
+        <div class="request-card">
+          <div class="request-header">
+            <h3 class="request-title">Vehicle: {{ request.vehicle.number_plate }}</h3>
+            <span class="request-status status-{{ request.status|lower|cut:" " }}">{{ request.get_status_display }}</span>
+          </div>
+          
+          <div class="request-details">
+            <div class="detail-item">
+              <div class="detail-label">Submitted</div>
+              <div class="detail-value">{{ request.submitted_at|date:"F j, Y" }}</div>
+            </div>
+            
+            <div class="detail-item">
+              <div class="detail-label">Mileage</div>
+              <div class="detail-value">{{ request.mileage }} km</div>
+            </div>
+            
+            <div class="detail-item">
+              <div class="detail-label">Issues</div>
+              <div class="detail-value">
+                <ul>
+                  {% for issue in request.issues.all %}
+                    <li>
+                      <strong>{{ issue.title }}</strong> - {{ issue.priority|capfirst }} ({{ issue.estimated_cost }} Ksh)
+                      {% if issue.description %}<br><small>{{ issue.description }}</small>{% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <div class="detail-label">Description</div>
+              <div class="detail-value">{{ request.description }}</div>
+            </div>
+
+            {% if request.status == "in_progress" %}
+              <div class="detail-item">
+                <div class="detail-label">Mechanic</div>
+                <div class="detail-value">{{ request.mechanic.full_name }}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Estimated Completion</div>
+                <div class="detail-value">{{ request.estimated_completion|date:"F j, Y" }}</div>
+              </div>
+            {% elif request.status == "completed" %}
+              <div class="detail-item">
+                <div class="detail-label">Completed By</div>
+                <div class="detail-value">{{ request.mechanic.full_name }}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Completed On</div>
+                <div class="detail-value">{{ request.completed_at|date:"F j, Y" }}</div>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div class="request-actions">
+            <a href="{% url 'drivers:request_detail' request.id %}" class="btn btn-outline">
+              <i class="fas fa-eye"></i> View Details
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="no-requests">No maintenance requests found.</p>
+    {% endif %}
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj %}
+  <div class="pagination">
+    {% if page_obj.has_previous %}
+      <a href="?{% if query %}q={{ query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.previous_page_number }}&sort={{ sort }}" class="page-link">
+        <i class="fas fa-chevron-left"></i> Previous
+      </a>
+    {% endif %}
+
+    <span class="page-info">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+      <a href="?{% if query %}q={{ query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.next_page_number }}&sort={{ sort }}" class="page-link">
+        Next <i class="fas fa-chevron-right"></i>
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endblock %}

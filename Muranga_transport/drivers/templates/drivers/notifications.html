@@ -1,0 +1,192 @@
+{% extends "drivers/base.html" %}
+{% load static %}
+
+{% block title %}Notifications | Municipality Driver{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'drivers/css/notifications.css' %}">
+{% endblock %}
+
+{% block content %}
+
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <button class="sidebar-toggle">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="nav-right">
+      <span class="user-greeting">Welcome, Skeff</span>
+      <img src="{% static 'drivers/images/profile-photo.jpg' %}" alt="User" class="user-avatar">
+    </div>
+  </header>
+
+  <div class="notification-header">
+    <h1 class="notification-title">
+      <i class="fas fa-bell notification-bell"></i>
+      Notifications
+      <span class="notification-badge-count" id="unreadCount">3</span>
+    </h1>
+    <button class="mark-all-read" id="markAllRead">
+      <i class="fas fa-check-double"></i> Mark All as Read
+    </button>
+  </div>
+
+  <!-- Filter Controls -->
+  <div class="filter-controls">
+    <button class="filter-btn active" data-filter="all">All Notifications</button>
+    <button class="filter-btn" data-filter="unread">Unread</button>
+    <button class="filter-btn" data-filter="assignments">Assignments</button>
+    <button class="filter-btn" data-filter="vehicle">Vehicle</button>
+  </div>
+
+  <!-- Notifications List -->
+  <div class="notification-list" id="notificationList">
+    <!-- Hard coded for now ...dynamic later -->
+    <!-- Notification -->
+    <div class="notification-item unread" data-id="1" data-type="assignment" data-status="pending">
+    <!-- Unread Notification -->
+    <div class="notification-item unread" data-id="1" data-type="assignment" data-status="pending">
+        <div class="notification-icon">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="notification-content">
+            <div class="notification-title-text">
+                New Assignment
+                <span class="notification-badge"></span>
+            </div>
+            <div class="notification-message">New task assigned: Vehicle #KAB 456B - Brake System Check</div>
+            <div class="notification-time">
+                <i class="far fa-clock"></i> Yesterday, 3:45 PM
+            </div>
+            <div class="notification-actions">
+                <button class="view-btn">View Details</button>
+                <button class="accept-btn">Accept</button>
+                <button class="decline-btn">Decline</button>
+            </div>
+        </div>
+    </div>
+    <!-- Read Notification (Accepted) -->
+    <div class="notification-item" data-id="2" data-type="assignment" data-status="accepted">
+        <div class="notification-icon">
+            <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="notification-content">
+            <div class="notification-title-text">Assignment Accepted</div>
+            <div class="notification-message">You accepted: Transport officials to Nairobi on June 15</div>
+            <div class="notification-time">
+                <i class="far fa-clock"></i> June 12, 2025 | 2:30 PM
+            </div>
+            <div class="notification-status status-accepted">✓ Accepted</div>
+        </div>
+    </div>
+    <!-- Vehicle Notification -->
+    <div class="notification-item unread" data-id="3" data-type="vehicle" data-status="pending">
+        <div class="notification-icon">
+            <i class="fas fa-car"></i>
+        </div>
+        <div class="notification-content">
+            <div class="notification-title-text">
+                Vehicle Maintenance
+                <span class="notification-badge"></span>
+            </div>
+            <div class="notification-message">Your assigned vehicle needs routine service</div>
+            <div class="notification-time">
+                <i class="far fa-clock"></i> June 10, 2025 | 9:15 AM
+            </div>
+            <div class="notification-actions">
+                <button class="view-btn">View Details</button>
+            </div>
+        </div>
+    </div>
+    <!-- Read Notification (Declined) -->
+    <div class="notification-item" data-id="4" data-type="assignment" data-status="declined">
+        <div class="notification-icon">
+            <i class="fas fa-calendar-times"></i>
+        </div>
+        <div class="notification-content">
+            <div class="notification-title-text">Assignment Declined</div>
+            <div class="notification-message">You declined: Field inspection tour on June 18</div>
+            <div class="notification-time">
+                <i class="far fa-clock"></i> June 9, 2025 | 4:20 PM
+            </div>
+            <div class="notification-status status-declined">✗ Declined</div>
+        </div>
+    </div>
+    <!-- Trip Notification -->
+    <div class="notification-item" data-id="5" data-type="trip" data-status="completed">
+        <div class="notification-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="notification-content">
+            <div class="notification-title-text">Trip Approved</div>
+            <div class="notification-message">Your trip log for June 12 has been approved</div>
+            <div class="notification-time">
+                <i class="far fa-clock"></i> June 13, 2025 | 11:30 AM
+            </div>
+            <div class="notification-actions">
+                <button class="view-btn">View Details</button>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" id="emptyState" style="display: none;">
+    <i class="fas fa-bell-slash"></i>
+    <h3>No Notifications Found</h3>
+    <p>You don't have any notifications matching your current filter.</p>
+  </div>
+
+  <!-- Accept Task Confirmation Modal -->
+  <div class="modal" id="acceptTaskModal">
+    <div class="accept-task-modal">
+      <h2>Accept Task</h2>
+      <p>Are you sure you want to accept this task: "New task assigned:<br>Vehicle #KAB 456B - Brake System Check"?</p>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" id="cancelAcceptTask">Cancel</button>
+        <button class="modal-btn modal-btn-confirm" id="confirmAcceptTask">Confirm</button>
+      </div>
+      <div class="modal-divider"></div>
+      <div class="modal-time">
+        <i class="far fa-clock"></i> Yesterday, 3:45 PM
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Details Modal -->
+  <div class="modal" id="notificationDetailsModal">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <h2 id="detailTitle">Notification Details</h2>
+      <div class="notification-item" style="box-shadow: none; margin-bottom: 20px; border: none;">
+        <div class="notification-icon" id="detailIcon">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="notification-content">
+          <div class="notification-title-text" id="detailNotificationTitle">New Assignment</div>
+          <div class="notification-message" id="detailMessage">New task assigned: Vehicle #KAB 456B - Brake System Check</div>
+          <div class="notification-time" id="detailTime">
+            <i class="far fa-clock"></i> Yesterday, 3:45 PM
+          </div>
+        </div>
+      </div>
+      <div id="detailAdditionalInfo">
+        <h3>Assignment Details</h3>
+        <p><strong>Vehicle:</strong> Toyota Land Cruiser (KAB 456B)</p>
+        <p><strong>Task Type:</strong> Brake System Check</p>
+        <p><strong>Location:</strong> Municipal Garage</p>
+        <p><strong>Scheduled Date:</strong> June 17, 2025</p>
+        <p><strong>Estimated Duration:</strong> 2 hours</p>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" id="closeDetails">Close</button>
+        <button class="modal-btn modal-btn-confirm" id="takeActionBtn">Accept Assignment</button>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'drivers/js/notifications.js' %}"></script>
+{% endblock %}
