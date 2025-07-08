@@ -1,0 +1,240 @@
+/* assign_mechanic.css */
+/* Modern styling for the assign mechanic page */
+
+/* Page Header */
+.page-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 2rem;
+  }
+  
+  .page-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .page-title i {
+    color: var(--primary-color);
+  }
+  
+  .page-subtitle {
+    color: var(--dark-gray);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+  /* Filter Form */
+  .filter-form {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--medium-gray);
+  }
+  
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+  }
+  
+  .filter-group label {
+    width: 100%;
+    font-size: 0.875rem;
+    color: var(--secondary-color);
+    font-weight: 500;
+  }
+  
+  .filter-group input {
+    flex: 1;
+    min-width: 250px;
+    padding: 10px 14px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 6px;
+    font-size: 0.9375rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  
+  .filter-group input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+  }
+  
+  .btn-small {
+    padding: 10px 16px;
+    font-size: 0.875rem;
+  }
+  
+  /* Mechanic List */
+  .mechanic-list {
+    overflow-x: auto;
+  }
+  
+  .table {
+    width: 100%;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  
+  .table th {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 12px 16px;
+  }
+  
+  .table td {
+    padding: 16px;
+    vertical-align: middle;
+  }
+  
+  .table tr:not(:last-child) td {
+    border-bottom: 1px solid var(--medium-gray);
+  }
+  
+  .table tr:hover td {
+    background-color: rgba(129, 199, 132, 0.08);
+  }
+  
+  /* Assign Button */
+  .btn-assign {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+  }
+  
+  .btn-assign:hover {
+    background-color: var(--primary-dark);
+  }
+  
+  .btn-assign:active {
+    transform: scale(0.98);
+  }
+  
+  /* No Mechanics Message */
+  .no-mechanics {
+    text-align: center;
+    padding: 2rem;
+    color: var(--dark-gray);
+    font-size: 1rem;
+    background-color: var(--light-gray);
+    border-radius: 6px;
+  }
+  
+  /* Pagination */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+  }
+  
+  .pagination a, 
+  .pagination span {
+    padding: 8px 14px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+  
+  .pagination a {
+    color: var(--primary-color);
+    border: 1px solid var(--medium-gray);
+    transition: all 0.2s;
+  }
+  
+  .pagination a:hover {
+    background-color: var(--primary-light);
+    color: white;
+    border-color: var(--primary-light);
+  }
+  
+  .pagination .active {
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+  }
+  
+  /* Messages/Alerts */
+  .messages {
+    margin-bottom: 1.5rem;
+  }
+  
+  .alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 0.9375rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .alert-success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-left: 4px solid #2e7d32;
+  }
+  
+  .alert-error {
+    background-color: #ffebee;
+    color: #c62828;
+    border-left: 4px solid #c62828;
+  }
+  
+  .alert-info {
+    background-color: #e3f2fd;
+    color: #1565c0;
+    border-left: 4px solid #1565c0;
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 1.5rem;
+    }
+    
+    .page-subtitle {
+      font-size: 0.9375rem;
+    }
+    
+    .table th, 
+    .table td {
+      padding: 12px;
+      font-size: 0.875rem;
+    }
+    
+    .filter-group {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .filter-group input {
+      min-width: 100%;
+    }
+  }
+  
+  /* Animation for better UX */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .card {
+    animation: fadeIn 0.3s ease-out forwards;
+  }

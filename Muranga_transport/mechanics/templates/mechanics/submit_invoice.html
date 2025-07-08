@@ -1,0 +1,69 @@
+{% extends "mechanics/base.html" %}
+{% load static %}
+
+{% block title %}Submit Invoice for Task {{ task.unique_task_id }} | Murang'a Transport{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'managers/css/styles.css' %}">
+{% endblock %}
+
+{% block content %}
+  <div class="main-content">
+    <header class="top-nav">
+      <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
+      <div class="nav-right">
+        <span class="user-greeting">{{ greeting }}, {{ mechanic.full_name|default:mechanic.user.get_full_name|default:mechanic.user.username }}</span>
+        <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      </div>
+    </header>
+
+    <div class="page-header">
+      <h1 class="page-title"><i class="fas fa-file-invoice-dollar"></i> Submit Invoice for Task {{ task.unique_task_id }}</h1>
+      <p class="page-subtitle">For vehicle {{ task.maintenance_request.vehicle.number_plate }}</p>
+    </div>
+
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="card">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="{{ form.vehicle_number.id_for_label }}"><i class="fas fa-car"></i> Vehicle Number</label>
+          {{ form.vehicle_number }}
+          {{ form.vehicle_number.errors }}
+        </div>
+        <div class="form-group">
+          <label for="{{ form.issues.id_for_label }}"><i class="fas fa-tools"></i> Issues</label>
+          {{ form.issues }}
+          {{ form.issues.errors }}
+        </div>
+        <div class="form-group">
+          <label for="{{ form.total_cost.id_for_label }}"><i class="fas fa-money-bill"></i> Total Cost (Ksh)</label>
+          {{ form.total_cost }}
+          {{ form.total_cost.errors }}
+        </div>
+        <div class="form-group">
+          <label for="{{ form.date_of_service.id_for_label }}"><i class="fas fa-calendar-day"></i> Date of Service</label>
+          {{ form.date_of_service }}
+          {{ form.date_of_service.errors }}
+        </div>
+        <div class="form-group">
+          <label for="photos"><i class="fas fa-camera"></i> Upload Photos (Max 5MB each)</label>
+          <input type="file" name="photos" id="photos" multiple accept="image/*">
+        </div>
+        <div class="form-actions">
+          <a href="{% url 'mechanics:tasks' %}" class="btn btn-outline btn-small">Cancel</a>
+          <button type="submit" class="btn btn-primary btn-small">Submit Invoice</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

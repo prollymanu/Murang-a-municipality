@@ -1,0 +1,398 @@
+{% extends "managers/base.html" %}
+{% load static %}
+
+{% block title %}Applications Management | Murang'a Transport{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'managers/css/applications.css' %}">
+{% endblock %}
+
+{% block content %}
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <button class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="nav-right">
+        <span class="user-greeting">
+          {% if greeting %}
+            {{ greeting }}, {{ name }}
+          {% else %}
+            Welcome, {{ user.first_name|default:"Transport Manager" }}
+          {% endif %}
+        </span>
+        <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      </div>
+    </header>
+    
+    <div class="page-header">
+      <h1 class="page-title">Personnel Management</h1>
+      <p class="page-subtitle">Manage drivers, mechanics, and application requests</p>
+    </div>
+    
+    <!-- Personnel Management Dashboard -->
+    <div class="personnel-container">
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" data-tab="applications">Applications</div>
+        <div class="tab" data-tab="drivers">Drivers</div>
+        <div class="tab" data-tab="mechanics">Mechanics</div>
+      </div>
+      
+      <!-- Applications Tab Content -->
+      <div class="tab-content active" id="applications-tab">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-file-alt"></i> Pending Applications</h2>
+            <div class="card-actions">
+              <button class="btn btn-outline" id="exportApplicationsBtn"><i class="fas fa-download"></i> Export</button>
+            </div>
+          </div>
+          
+          <!-- Search and Filters -->
+          <div class="search-filter">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" class="search-input" id="applicationSearch" placeholder="Search applications...">
+            </div>
+            <select class="filter-select" id="applicationTypeFilter">
+              <option value="all">All Types</option>
+              <option value="driver">Driver</option>
+              <option value="mechanic">Mechanic</option>
+            </select>
+            <select class="filter-select" id="applicationDateFilter">
+              <option value="all">All Dates</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
+          </div>
+          
+          <!-- Applications List -->
+          <div id="applicationsList">
+            <!-- Application cards will be populated here -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- Drivers Tab Content -->
+      <div class="tab-content" id="drivers-tab">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-id-card"></i> Registered Drivers</h2>
+            <div class="card-actions">
+              <button class="btn btn-outline" id="exportDriversBtn"><i class="fas fa-download"></i> Export</button>
+              <button class="btn btn-primary" id="addDriverBtn"><i class="fas fa-plus"></i> Add Driver</button>
+            </div>
+          </div>
+          
+          <!-- Search and Filters -->
+          <div class="search-filter">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" class="search-input" id="driverSearch" placeholder="Search drivers...">
+            </div>
+            <select class="filter-select" id="driverStatusFilter">
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="on-leave">On Leave</option>
+            </select>
+            <select class="filter-select" id="driverLicenseFilter">
+              <option value="all">All License Types</option>
+              <option value="bce">BCE</option>
+              <option value="cde">CDE</option>
+              <option value="b">B</option>
+            </select>
+          </div>
+          
+          <!-- Drivers Table -->
+          <div class="table-responsive">
+            <table class="personnel-table">
+              <thead>
+                <tr>
+                  <th>Driver</th>
+                  <th>ID Number</th>
+                  <th>License</th>
+                  <th>Contact</th>
+                  <th>Status</th>
+                  <th>Date Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="driversTableBody">
+                <!-- Driver rows will be populated here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Mechanics Tab Content -->
+      <div class="tab-content" id="mechanics-tab">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-tools"></i> Registered Mechanics</h2>
+            <div class="card-actions">
+              <button class="btn btn-outline" id="exportMechanicsBtn"><i class="fas fa-download"></i> Export</button>
+              <button class="btn btn-primary" id="addMechanicBtn"><i class="fas fa-plus"></i> Add Mechanic</button>
+            </div>
+          </div>
+          
+          <!-- Search and Filters -->
+          <div class="search-filter">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" class="search-input" id="mechanicSearch" placeholder="Search mechanics...">
+            </div>
+            <select class="filter-select" id="mechanicStatusFilter">
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="on-leave">On Leave</option>
+            </select>
+            <select class="filter-select" id="mechanicSpecialtyFilter">
+              <option value="all">All Specialties</option>
+              <option value="engine">Engine</option>
+              <option value="electrical">Electrical</option>
+              <option value="body">Body</option>
+              <option value="general">General</option>
+            </select>
+          </div>
+          
+          <!-- Mechanics Table -->
+          <div class="table-responsive">
+            <table class="personnel-table">
+              <thead>
+                <tr>
+                  <th>Mechanic</th>
+                  <th>ID Number</th>
+                  <th>Specialty</th>
+                  <th>Contact</th>
+                  <th>Status</th>
+                  <th>Date Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="mechanicsTableBody">
+                <!-- Mechanic rows will be populated here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Add Driver Modal -->
+    <div class="modal" id="addDriverModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title"><i class="fas fa-user-plus"></i> Register New Driver</h3>
+          <button class="modal-close">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <form id="driverForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label><i class="fas fa-user"></i> First Name</label>
+                <input type="text" class="form-control" id="driverFirstName" required>
+              </div>
+              <div class="form-group">
+                <label><i class="fas fa-user"></i> Last Name</label>
+                <input type="text" class="form-control" id="driverLastName" required>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label><i class="fas fa-id-card"></i> ID Number</label>
+              <input type="text" class="form-control" id="driverIdNumber" required>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label><i class="fas fa-car"></i> License Type</label>
+                <select class="form-control" id="driverLicenseType" required>
+                  <option value="">Select License</option>
+                  <option value="bce">BCE</option>
+                  <option value="cde">CDE</option>
+                  <option value="b">B</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label><i class="fas fa-calendar-alt"></i> License Expiry</label>
+                <input type="date" class="form-control" id="driverLicenseExpiry" required>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label><i class="fas fa-phone"></i> Phone Number</label>
+                <input type="tel" class="form-control" id="driverPhone" required>
+              </div>
+              <div class="form-group">
+                <label><i class="fas fa-envelope"></i> Email</label>
+                <input type="email" class="form-control" id="driverEmail">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label><i class="fas fa-map-marker-alt"></i> Address</label>
+              <input type="text" class="form-control" id="driverAddress">
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label><i class="fas fa-calendar-plus"></i> Date Joined</label>
+                <input type="date" class="form-control" id="driverDateJoined" required>
+              </div>
+              <div class="form-group">
+                <label><i class="fas fa-check-circle"></i> Status</label>
+                <select class="form-control" id="driverStatus" required>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="on-leave">On Leave</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label><i class="fas fa-camera"></i> Photo</label>
+              <div class="file-upload">
+                <input type="file" id="driverPhoto" accept="image/*">
+                <label for="driverPhoto">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <span>Click to upload photo</span>
+                </label>
+              </div>
+            </div>
+          </form>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="cancelDriverBtn">Cancel</button>
+          <button class="btn btn-primary" id="saveDriverBtn">Save Driver</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Add Mechanic Modal -->
+    <div class="modal" id="addMechanicModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title"><i class="fas fa-user-plus"></i> Register New Mechanic</h3>
+          <button class="modal-close">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <form id="mechanicForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label><i class="fas fa-user"></i> First Name</label>
+                <input type="text" class="form-control" id="mechanicFirstName" required>
+              </div>
+              <div class="form-group">
+                <label><i class="fas fa-user"></i> Last Name</label>
+                <input type="text" class="form-control" id="mechanicLastName" required>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label><i class="fas fa-id-card"></i> ID Number</label>
+              <input type="text" class="form-control" id="mechanicIdNumber" required>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label><i class="fas fa-tools"></i> Specialty</label>
+                <select class="form-control" id="mechanicSpecialty" required>
+                  <option value="">Select Specialty</option>
+                  <option value="engine">Engine</option>
+                  <option value="electrical">Electrical</option>
+                  <option value="body">Body</option>
+                  <option value="general">General</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label><i class="fas fa-briefcase"></i> Years of Experience</label>
+                <input type="number" class="form-control" id="mechanicExperience" min="0" required>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label><i class="fas fa-phone"></i> Phone Number</label>
+                <input type="tel" class="form-control" id="mechanicPhone" required>
+              </div>
+              <div class="form-group">
+                <label><i class="fas fa-envelope"></i> Email</label>
+                <input type="email" class="form-control" id="mechanicEmail">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label><i class="fas fa-map-marker-alt"></i> Address</label>
+              <input type="text" class="form-control" id="mechanicAddress">
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label><i class="fas fa-calendar-plus"></i> Date Joined</label>
+                <input type="date" class="form-control" id="mechanicDateJoined" required>
+              </div>
+              <div class="form-group">
+                <label><i class="fas fa-check-circle"></i> Status</label>
+                <select class="form-control" id="mechanicStatus" required>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="on-leave">On Leave</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label><i class="fas fa-camera"></i> Photo</label>
+              <div class="file-upload">
+                <input type="file" id="mechanicPhoto" accept="image/*">
+                <label for="mechanicPhoto">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <span>Click to upload photo</span>
+                </label>
+              </div>
+            </div>
+          </form>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="cancelMechanicBtn">Cancel</button>
+          <button class="btn btn-primary" id="saveMechanicBtn">Save Mechanic</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- View/Edit Personnel Modal -->
+    <div class="modal" id="personnelDetailsModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" id="personnelModalTitle">Personnel Details</h3>
+          <button class="modal-close">×</button>
+        </div>
+        
+        <div class="modal-body" id="personnelModalBody">
+          <!-- Content will be dynamically loaded here -->
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="closePersonnelModalBtn">Close</button>
+          <button class="btn btn-primary" id="savePersonnelChangesBtn">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'managers/js/applications.js' %}"></script>
+{% endblock %}

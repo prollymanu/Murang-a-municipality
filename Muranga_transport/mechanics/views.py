@@ -1,107 +1,67 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from datetime import timedelta
-
-from django.http import JsonResponse
-import json
+from django.http import JsonResponse, FileResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
-
 from django.contrib import messages
-from django.urls import reverse
-
-from .models import MechanicProfile, MechanicTask, RepairInvoice, RepairInvoicePhoto
-from drivers.models import MaintenanceRequest
-from .forms import MechanicProfileForm, RepairInvoiceForm
-
-import io
-from django.http import FileResponse
-from reportlab.pdfgen import canvas
-from django.shortcuts import redirect
-import openpyxl
-from django.http import HttpResponse
-
 from django.core.paginator import Paginator
 from django.db.models import Sum
-from django.contrib.auth.decorators import user_passes_test
-
-from .forms import MechanicSupportForm
-from .models import MechanicSupportAttachment
-
+from django.urls import reverse
+import json
+import io
+import openpyxl
+from reportlab.pdfgen import canvas
+from .models import MechanicProfile, MechanicTask, RepairInvoice, RepairInvoicePhoto, MechanicSupportRequest, MechanicSupportAttachment
+from drivers.models import MaintenanceRequest
+from .forms import MechanicProfileForm, RepairInvoiceForm, MechanicSupportForm
 
 @login_required
 def mechanic_dashboard(request):
     user = request.user
     now = timezone.localtime(timezone.now())
     hour = now.hour
-
     greeting = (
         "Good morning" if 5 <= hour < 12 else
         "Good afternoon" if 12 <= hour < 17 else
         "Good evening"
     )
 
-    # Ensure mechanic profile exists
-    if hasattr(user, 'mechanicprofile'):
-        mechanic = user.mechanicprofile
-    else:
-        messages.error(
-            request,
-            "Mechanic profile missing. Your account might not be fully approved yet. "
-            "Please contact your administrator."
-        )
-        return redirect(reverse('core:login'))
-
-    tasks_completed = MechanicTask.objects.filter(
-        mechanic=mechanic, status='completed'
-    ).count()
-
-    assigned_tasks = MechanicTask.objects.filter(
-        mechanic=mechanic
-    ).exclude(status='completed').order_by('-assigned_at')
+    mechanic = get_object_or_404(MechanicProfile, user=user)
+    tasks_completed = MechanicTask.objects.filter(mechanic=mechanic, status='completed').count()
+    assigned_tasks = MechanicTask.objects.filter(mechanic=mechanic).exclude(status='completed').order_by('-assigned_at')
 
     context = {
         "greeting": greeting,
         "mechanic": mechanic,
-        "name": user.get_full_name() or user.username,
+        "name": mechanic.full_name or user.get_full_name() or user.username,
         "tasks_completed": tasks_completed,
         "assigned_tasks": assigned_tasks,
     }
     return render(request, 'mechanics/dashboard.html', context)
 
-
 @login_required
 def profile(request):
     mechanic = get_object_or_404(MechanicProfile, user=request.user)
-    recent_tasks = MechanicTask.objects.filter(
-        mechanic=mechanic
-    ).order_by('-assigned_at')[:5]
+    recent_tasks = MechanicTask.objects.filter(mechanic=mechanic).order_by('-assigned_at')[:5]
 
     return render(request, 'mechanics/profile.html', {
         'mechanic': mechanic,
         'recent_tasks': recent_tasks,
     })
 
-
 @login_required
 def profile_edit(request):
     mechanic = get_object_or_404(MechanicProfile, user=request.user)
 
     if request.method == 'POST':
-        form = MechanicProfileForm(request.POST, instance=mechanic, user=request.user)
+        form = MechanicProfileForm(request.POST, request.FILES, instance=mechanic, user=request.user)
         if form.is_valid():
             updated_mechanic = form.save(commit=False)
-
-            # Handle specialization checkboxes explicitly
             specializations = request.POST.getlist('specialization')
             updated_mechanic.specialization = ','.join(specializations)
-
             updated_mechanic.save()
-
-            # Update related user data
             request.user.phone_number = form.cleaned_data.get('phone_number')
             request.user.email = form.cleaned_data.get('email')
             request.user.save()
-
             messages.success(request, "Profile updated successfully!")
             return redirect('mechanics:profile')
         else:
@@ -114,16 +74,11 @@ def profile_edit(request):
 
     return render(request, 'mechanics/profile_edit.html', {'form': form, 'mechanic': mechanic})
 
-
 @login_required
 def invoices(request):
-    mechanic = request.user.mechanicprofile
-    invoices = RepairInvoice.objects.filter(
-    mechanic_task__mechanic=mechanic
-    ).order_by('-created_at')
+    mechanic = get_object_or_404(MechanicProfile, user=request.user)
+    invoices = RepairInvoice.objects.filter(mechanic_task__mechanic=mechanic).order_by('-created_at')
 
-
-    # Filters
     status = request.GET.get('status')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
@@ -135,11 +90,10 @@ def invoices(request):
     if end_date:
         invoices = invoices.filter(created_at__lte=end_date)
 
-    # Summary calculations
     period = request.GET.get('period', '30d')
     period_start = (
-        timezone.now() - timedelta(days=30) if period == '30d' else
-        timezone.now() - timedelta(days=180) if period == '6m' else
+        timezone.now() - timezone.timedelta(days=30) if period == '30d' else
+        timezone.now() - timezone.timedelta(days=180) if period == '6m' else
         timezone.make_aware(timezone.datetime.min)
     )
 
@@ -149,14 +103,11 @@ def invoices(request):
         created_at__gte=period_start,
     ).aggregate(Sum('total_cost'))['total_cost__sum'] or 0
 
-
     pending_total = RepairInvoice.objects.filter(
-    mechanic_task__mechanic=mechanic,
-    status='pending',
+        mechanic_task__mechanic=mechanic,
+        status='pending',
     ).aggregate(Sum('total_cost'))['total_cost__sum'] or 0
 
-
-    # Pagination
     paginator = Paginator(invoices, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -172,8 +123,8 @@ def invoices(request):
 
 @login_required
 def export_invoices_pdf(request):
-    mechanic = request.user.mechanicprofile
-    invoices = mechanic.repairinvoice_set.all()
+    mechanic = get_object_or_404(MechanicProfile, user=request.user)
+    invoices = RepairInvoice.objects.filter(mechanic_task__mechanic=mechanic)
 
     buffer = io.BytesIO()
     p = canvas.Canvas(buffer)
@@ -195,8 +146,8 @@ def export_invoices_pdf(request):
 
 @login_required
 def export_invoices_excel(request):
-    mechanic = request.user.mechanicprofile
-    invoices = mechanic.repairinvoice_set.all()
+    mechanic = get_object_or_404(MechanicProfile, user=request.user)
+    invoices = RepairInvoice.objects.filter(mechanic_task__mechanic=mechanic)
 
     workbook = openpyxl.Workbook()
     sheet = workbook.active
@@ -224,7 +175,7 @@ def export_invoices_excel(request):
 
 @login_required
 def download_invoice(request, invoice_id):
-    mechanic = request.user.mechanicprofile
+    mechanic = get_object_or_404(MechanicProfile, user=request.user)
     invoice = get_object_or_404(RepairInvoice, id=invoice_id, mechanic_task__mechanic=mechanic)
 
     buffer = io.BytesIO()
@@ -244,14 +195,9 @@ def download_invoice(request, invoice_id):
     messages.success(request, f"Downloaded invoice {invoice.task_unique_id}.")
     return FileResponse(buffer, as_attachment=True, filename=f'invoice_{invoice.task_unique_id}.pdf')
 
-
 @login_required
 def notifications(request):
     return render(request, 'mechanics/notifications.html')
-
-
-
-
 
 @login_required
 def tasks(request):
@@ -271,8 +217,12 @@ def tasks(request):
         'tasks': tasks,
         'selected_status': status,
         'selected_priority': priority,
+        'greeting': (
+            "Good morning" if 5 <= timezone.localtime(timezone.now()).hour < 12 else
+            "Good afternoon" if 12 <= timezone.localtime(timezone.now()).hour < 17 else
+            "Good evening"
+        ),
     })
-
 
 @login_required
 def task_detail(request, pk):
@@ -281,8 +231,12 @@ def task_detail(request, pk):
     return render(request, 'mechanics/task_detail.html', {
         'mechanic': mechanic,
         'task': task,
+        'greeting': (
+            "Good morning" if 5 <= timezone.localtime(timezone.now()).hour < 12 else
+            "Good afternoon" if 12 <= timezone.localtime(timezone.now()).hour < 17 else
+            "Good evening"
+        ),
     })
-
 
 @login_required
 def update_task_progress(request, pk):
@@ -303,12 +257,12 @@ def update_task_progress(request, pk):
         if task.status == 'completed':
             maintenance_request = task.maintenance_request
             maintenance_request.status = 'completed'
+            maintenance_request.last_update = f"Completed by {mechanic.full_name or mechanic.user.username} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
             maintenance_request.save()
 
         return JsonResponse({'success': True})
-    
-    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
 
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
 
 @login_required
 def complete_task(request, pk):
@@ -322,16 +276,67 @@ def complete_task(request, pk):
 
         maintenance_request = task.maintenance_request
         maintenance_request.status = 'completed'
+        maintenance_request.last_update = f"Completed by {mechanic.full_name or mechanic.user.username} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
         maintenance_request.save()
 
         return JsonResponse({'success': True})
 
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
 
+@login_required
+def submit_invoice(request, task_id):
+    mechanic = get_object_or_404(MechanicProfile, user=request.user)
+    task = get_object_or_404(MechanicTask, pk=task_id, mechanic=mechanic)
+
+    if task.status not in ['in_progress', 'completed']:
+        messages.error(request, "Cannot submit invoice for this task.")
+        return redirect('mechanics:tasks')
+
+    if hasattr(task, 'invoice'):
+        messages.error(request, "An invoice has already been submitted for this task.")
+        return redirect('mechanics:tasks')
+
+    if request.method == 'POST':
+        form = RepairInvoiceForm(request.POST, request.FILES)
+        if form.is_valid():
+            invoice = form.save(commit=False)
+            invoice.mechanic_task = task
+            invoice.task_unique_id = task.unique_task_id
+            invoice.save()
+
+            for file in request.FILES.getlist('photos'):
+                if file.size > 5 * 1024 * 1024:
+                    invoice.delete()
+                    messages.error(request, f"File {file.name} exceeds 5MB limit.")
+                    return redirect('mechanics:submit_invoice', task_id=task_id)
+                RepairInvoicePhoto.objects.create(invoice=invoice, image=file)
+
+            messages.success(request, f"Invoice for task {task.unique_task_id} submitted successfully!")
+            return redirect('mechanics:tasks')
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        initial_data = {
+            'vehicle_number': task.maintenance_request.vehicle.number_plate,
+            'issues': ', '.join(issue.title for issue in task.maintenance_request.issues.all()),
+            'total_cost': sum(issue.cost_estimate for issue in task.maintenance_request.issues.all()),
+        }
+        form = RepairInvoiceForm(initial=initial_data)
+
+    return render(request, 'mechanics/submit_invoice.html', {
+        'mechanic': mechanic,
+        'task': task,
+        'form': form,
+        'greeting': (
+            "Good morning" if 5 <= timezone.localtime(timezone.now()).hour < 12 else
+            "Good afternoon" if 12 <= timezone.localtime(timezone.now()).hour < 17 else
+            "Good evening"
+        ),
+    })
 
 @login_required
 def repair_invoice_generic(request):
-    mechanic = request.user.mechanicprofile
+    mechanic = get_object_or_404(MechanicProfile, user=request.user)
 
     if request.method == 'POST':
         form = RepairInvoiceForm(request.POST, request.FILES)
@@ -353,58 +358,46 @@ def repair_invoice_generic(request):
     else:
         form = RepairInvoiceForm()
 
-    return render(request, 'mechanics/repair_invoice.html', {'form': form, 'mechanic': mechanic})
-
-
-@login_required
-def repair_invoice(request, task_id):
-    mechanic = request.user.mechanicprofile
-    task = get_object_or_404(MechanicTask, pk=task_id, mechanic=mechanic)
-
-    if request.method == 'POST':
-        form = RepairInvoiceForm(request.POST, request.FILES)
-        if form.is_valid():
-            invoice = form.save(commit=False)
-            invoice.mechanic_task = task
-            invoice.save()
-
-            for file in request.FILES.getlist('photos'):
-                if file.size > 5 * 1024 * 1024:
-                    invoice.delete()
-                    messages.error(request, f"File {file.name} exceeds 5MB limit.")
-                    return redirect('mechanics:repair_invoice', task_id=task_id)
-                RepairInvoicePhoto.objects.create(invoice=invoice, image=file)
-
-            messages.success(request, "Repair invoice for task submitted successfully!")
-            return redirect('mechanics:tasks')
-        else:
-            messages.error(request, "Please correct the errors in the form.")
-    else:
-        form = RepairInvoiceForm()
-
-    return render(request, 'mechanics/repair_invoice.html', {'form': form, 'mechanic': mechanic, 'task': task})
+    return render(request, 'mechanics/repair_invoice.html', {
+        'form': form,
+        'mechanic': mechanic,
+        'greeting': (
+            "Good morning" if 5 <= timezone.localtime(timezone.now()).hour < 12 else
+            "Good afternoon" if 12 <= timezone.localtime(timezone.now()).hour < 17 else
+            "Good evening"
+        ),
+    })
 
 @login_required
 def support(request):
+    mechanic = get_object_or_404(MechanicProfile, user=request.user)
     if request.method == 'POST':
         form = MechanicSupportForm(request.POST)
         if form.is_valid():
             support_request = form.save(commit=False)
-            support_request.mechanic = request.user  # User model or MechanicProfile? adjust if needed
+            support_request.mechanic = mechanic
             support_request.save()
 
-            # Handle multiple uploaded files
-            files = request.FILES.getlist('files')  # name in your HTML form input
-            for f in files:
-                MechanicSupportAttachment.objects.create(
-                    request=support_request,
-                    file=f,
-                )
+            for file in request.FILES.getlist('files'):
+                if file.size > 5 * 1024 * 1024:
+                    support_request.delete()
+                    messages.error(request, f"File {file.name} exceeds 5MB limit.")
+                    return redirect('mechanics:support')
+                MechanicSupportAttachment.objects.create(request=support_request, file=file)
+
             messages.success(request, "Your support request has been submitted successfully.")
-            return redirect('mechanic_support')
+            return redirect('mechanics:support')
         else:
             messages.error(request, "Please correct the errors below.")
-
     else:
         form = MechanicSupportForm()
-    return render(request, 'mechanics/support.html', {'form': form})
+
+    return render(request, 'mechanics/support.html', {
+        'form': form,
+        'mechanic': mechanic,
+        'greeting': (
+            "Good morning" if 5 <= timezone.localtime(timezone.now()).hour < 12 else
+            "Good afternoon" if 12 <= timezone.localtime(timezone.now()).hour < 17 else
+            "Good evening"
+        ),
+    })

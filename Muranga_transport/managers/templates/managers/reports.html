@@ -1,0 +1,404 @@
+{% extends "managers/base.html" %}
+{% load static %}
+
+{% block title %}Driver Reports | Murang'a Transport{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'managers/css/reports.css' %}">
+{% endblock %}
+
+{% block content %} 
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <button class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="nav-right">
+        <span class="user-greeting">
+          {% if user %}
+            Welcome, {{ user.first_name|default:"Transport Manager" }}
+          {% else %}
+            Welcome, Transport Manager
+          {% endif %}
+        </span>
+        <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      </div>
+    </header>
+    
+    <div class="page-header">
+      <h1 class="page-title">Driver Reports</h1>
+      <p class="page-subtitle">View and manage all reports submitted by drivers</p>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label"><i class="fas fa-flag"></i> Total Reports</span>
+        <span class="stat-value">47</span>
+        <span class="stat-trend trend-up"><i class="fas fa-arrow-up"></i> 12% from last month</span>
+      </div>
+      
+      <div class="stat-card">
+        <span class="stat-label"><i class="fas fa-clock"></i> Pending</span>
+        <span class="stat-value">18</span>
+        <span class="stat-trend trend-up"><i class="fas fa-arrow-up"></i> 5 from yesterday</span>
+      </div>
+      
+      <div class="stat-card">
+        <span class="stat-label"><i class="fas fa-check-circle"></i> Resolved</span>
+        <span class="stat-value">24</span>
+        <span class="stat-trend trend-up"><i class="fas fa-arrow-up"></i> 8 this week</span>
+      </div>
+      
+      <div class="stat-card">
+        <span class="stat-label"><i class="fas fa-exclamation-triangle"></i> Urgent</span>
+        <span class="stat-value">5</span>
+        <span class="stat-trend trend-down"><i class="fas fa-arrow-down"></i> 2 since yesterday</span>
+      </div>
+    </div>
+    
+    <!-- Reports Dashboard -->
+    <div class="reports-dashboard">
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fas fa-list"></i> Recent Reports</h2>
+          <div class="card-actions">
+            <button class="btn btn-outline" id="exportBtn"><i class="fas fa-download"></i> Export</button>
+            <button class="btn btn-primary" id="createReportBtn"><i class="fas fa-plus"></i> Create Report</button>
+          </div>
+        </div>
+        
+        <!-- Filters -->
+        <div class="filters-row">
+          <div class="filter-group">
+            <label class="filter-label">Status</label>
+            <select class="filter-select" id="status-filter">
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-label">Report Type</label>
+            <select class="filter-select" id="type-filter">
+              <option value="all">All Types</option>
+              <option value="mechanical">Mechanical</option>
+              <option value="electrical">Electrical</option>
+              <option value="body">Body Damage</option>
+              <option value="performance">Performance</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-label">Vehicle</label>
+            <select class="filter-select" id="vehicle-filter">
+              <option value="all">All Vehicles</option>
+              <option value="kab123x">KAB 123X</option>
+              <option value="kab456b">KAB 456B</option>
+              <option value="kcd789m">KCD 789M</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-label">Date Range</label>
+            <select class="filter-select" id="date-filter">
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month" selected>This Month</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-label">Driver</label>
+            <select class="filter-select" id="driver-filter">
+              <option value="all">All Drivers</option>
+              <option value="kamau">John Kamau</option>
+              <option value="wambui">Mary Wambui</option>
+              <option value="odhiambo">James Odhiambo</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Reports Table -->
+        <table class="reports-table">
+          <thead>
+            <tr>
+              <th>Report ID</th>
+              <th>Driver</th>
+              <th>Vehicle</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="report-row" data-id="rep-2023-045" data-status="urgent" data-type="mechanical" data-vehicle="kab123x" data-driver="kamau" data-date="2023-06-15">
+              <td>REP-2023-045</td>
+              <td>
+                <div class="report-driver">
+                  <img src="{% static 'managers/images/murangalogo.png' %}" alt="Driver" class="driver-avatar">
+                  <div class="driver-info">
+                    <span class="driver-name">John Kamau</span>
+                    <span class="driver-id">DRV-2022-015</span>
+                  </div>
+                </div>
+              </td>
+              <td>KAB 123X</td>
+              <td>Mechanical</td>
+              <td>Brake system malfunction</td>
+              <td><span class="report-status status-urgent">Urgent</span></td>
+              <td>Jun 15, 2023</td>
+              <td>
+                <div class="report-actions">
+                  <button class="btn btn-outline btn-sm view-report-btn"><i class="fas fa-eye"></i> View</button>
+                  <button class="btn btn-outline btn-sm edit-report-btn"><i class="fas fa-edit"></i> Edit</button>
+                </div>
+              </td>
+            </tr>
+            
+            <tr class="report-row" data-id="rep-2023-044" data-status="in-progress" data-type="electrical" data-vehicle="kcd789m" data-driver="wambui" data-date="2023-06-14">
+              <td>REP-2023-044</td>
+              <td>
+                <div class="report-driver">
+                  <img src="{% static 'managers/images/murangalogo.png' %}" alt="Driver" class="driver-avatar">
+                  <div class="driver-info">
+                    <span class="driver-name">Mary Wambui</span>
+                    <span class="driver-id">DRV-2021-032</span>
+                  </div>
+                </div>
+              </td>
+              <td>KCD 789M</td>
+              <td>Electrical</td>
+              <td>Dashboard warning lights</td>
+              <td><span class="report-status status-in-progress">In Progress</span></td>
+              <td>Jun 14, 2023</td>
+              <td>
+                <div class="report-actions">
+                  <button class="btn btn-outline btn-sm view-report-btn"><i class="fas fa-eye"></i> View</button>
+                  <button class="btn btn-outline btn-sm edit-report-btn"><i class="fas fa-edit"></i> Edit</button>
+                </div>
+              </td>
+            </tr>
+            
+            <tr class="report-row" data-id="rep-2023-043" data-status="pending" data-type="body" data-vehicle="kab456b" data-driver="odhiambo" data-date="2023-06-12">
+              <td>REP-2023-043</td>
+              <td>
+                <div class="report-driver">
+                  <img src="{% static 'managers/images/driver3.jpg' %}" alt="Driver" class="driver-avatar">
+                  <div class="driver-info">
+                    <span class="driver-name">James Odhiambo</span>
+                    <span class="driver-id">DRV-2020-008</span>
+                  </div>
+                </div>
+              </td>
+              <td>KAB 456B</td>
+              <td>Body</td>
+              <td>Dent on rear bumper</td>
+              <td><span class="report-status status-pending">Pending</span></td>
+              <td>Jun 12, 2023</td>
+              <td>
+                <div class="report-actions">
+                  <button class="btn btn-outline btn-sm view-report-btn"><i class="fas fa-eye"></i> View</button>
+                  <button class="btn btn-outline btn-sm edit-report-btn"><i class="fas fa-edit"></i> Edit</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Report Details Modal -->
+    <div class="modal" id="reportDetailsModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Report Details</h2>
+          <button class="close-btn">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="report-details-grid">
+            <div>
+              <div class="detail-group">
+                <div class="detail-label">Report ID</div>
+                <div class="detail-value" id="modal-report-id">REP-2023-045</div>
+              </div>
+              
+              <div class="detail-group">
+                <div class="detail-label">Driver</div>
+                <div class="detail-value" id="modal-driver">
+                  <div class="report-driver">
+                    <img src="{% static 'managers/images/driver1.jpg' %}" alt="Driver" class="driver-avatar">
+                    <div class="driver-info">
+                      <span class="driver-name">John Kamau</span>
+                      <span class="driver-id">DRV-2022-015</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="detail-group">
+                <div class="detail-label">Vehicle</div>
+                <div class="detail-value" id="modal-vehicle">Toyota Land Cruiser (KAB 123X)</div>
+              </div>
+              
+              <div class="detail-group">
+                <div class="detail-label">License Plate</div>
+                <div class="detail-value" id="modal-license">KAB 123X</div>
+              </div>
+            </div>
+            
+            <div>
+              <div class="detail-group">
+                <div class="detail-label">Report Type</div>
+                <div class="detail-value" id="modal-type">Mechanical</div>
+              </div>
+              
+              <div class="detail-group">
+                <div class="detail-label">Urgency</div>
+                <div class="detail-value" id="modal-urgency">High (Immediate attention required)</div>
+              </div>
+              
+              <div class="detail-group">
+                <div class="detail-label">Date Reported</div>
+                <div class="detail-value" id="modal-date">June 15, 2023 at 10:45 AM</div>
+              </div>
+              
+              <div class="detail-group">
+                <div class="detail-label">Current Status</div>
+                <div class="detail-value">
+                  <select class="filter-select" id="modal-status">
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="urgent" selected>Urgent</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="report-description">
+            <div class="detail-label">Issue Description</div>
+            <p id="modal-description">
+              While driving back from the county offices, I noticed the brake pedal was feeling soft and the vehicle was taking longer to stop than usual. 
+              There was also a squeaking noise coming from the front wheels when braking. The issue seems to be getting worse, and I'm concerned about 
+              the safety of the vehicle. I recommend immediate inspection of the brake system before the vehicle is used again.
+            </p>
+          </div>
+          
+          <div class="report-attachments">
+            <div class="detail-label">Attachments</div>
+            <div id="modal-attachments">
+              <img src="{% static 'managers/images/brake1.jpg' %}" alt="Brake Issue" class="attachment-thumbnail">
+              <img src="{% static 'managers/images/brake2.jpg' %}" alt="Brake Issue" class="attachment-thumbnail">
+            </div>
+          </div>
+          
+          <div class="response-area">
+            <div class="detail-label">Your Response</div>
+            <textarea id="response-textarea" placeholder="Type your response to the driver here..."></textarea>
+          </div>
+          
+          <div class="previous-responses">
+            <div class="detail-label">Previous Responses</div>
+            <div id="responses-container">
+              <div class="response-item">
+                <div class="response-meta">
+                  <span>Transport Manager</span>
+                  <span>Jun 15, 2023 11:30 AM</span>
+                </div>
+                <p>I've forwarded this to our mechanics for immediate inspection. The vehicle should not be used until brakes are checked.</p>
+              </div>
+              <div class="response-item">
+                <div class="response-meta">
+                  <span>Mechanic Team</span>
+                  <span>Jun 15, 2023 2:15 PM</span>
+                </div>
+                <p>Brake pads worn out and fluid leaking. Parts ordered, will be repaired by tomorrow.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="closeModalBtn">Close</button>
+          <button class="btn btn-primary" id="saveResponseBtn">Send Response</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Create Report Modal -->
+    <div class="modal" id="createReportModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Create New Report</h2>
+          <button class="close-btn">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <form id="createReportForm">
+            <div class="form-group">
+              <label class="form-label">Report Type</label>
+              <select class="form-select" id="new-report-type" required>
+                <option value="">Select Type</option>
+                <option value="mechanical">Mechanical</option>
+                <option value="electrical">Electrical</option>
+                <option value="body">Body Damage</option>
+                <option value="performance">Performance</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Vehicle</label>
+              <select class="form-select" id="new-report-vehicle" required>
+                <option value="">Select Vehicle</option>
+                <option value="kab123x">KAB 123X - Toyota Land Cruiser</option>
+                <option value="kab456b">KAB 456B - Toyota Hilux</option>
+                <option value="kcd789m">KCD 789M - Mitsubishi Canter</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Urgency</label>
+              <select class="form-select" id="new-report-urgency" required>
+                <option value="low">Low (Can wait)</option>
+                <option value="medium">Medium (Needs attention soon)</option>
+                <option value="high">High (Immediate attention required)</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Issue Description</label>
+              <textarea class="form-control" id="new-report-description" rows="5" required placeholder="Describe the issue in detail..."></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Attachments (Optional)</label>
+              <input type="file" id="new-report-attachments" class="form-control" multiple>
+            </div>
+          </form>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="cancelCreateReportBtn">Cancel</button>
+          <button class="btn btn-primary" id="submitReportBtn">Submit Report</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'managers/js/reports.js' %}"></script>
+{% endblock %}

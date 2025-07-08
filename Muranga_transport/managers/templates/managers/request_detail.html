@@ -1,0 +1,279 @@
+{% extends "managers/base.html" %}
+{% load static %}
+
+{% block title %}Maintenance Request #{{ request_obj.id }} | Murang'a Transport{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'managers/css/request_detail.css' %}">
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    .modal.show {
+      display: block;
+    }
+    .modal-content {
+      background-color: white;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title {
+      font-size: 1.2em;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+    }
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    .alert {
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+    }
+    .alert-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="main-content">
+    <header class="top-nav">
+      <button class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="nav-right">
+        <span class="user-greeting">
+          {{ greeting }}, {{ name }}
+        </span>
+        <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      </div>
+    </header>
+    
+    <div class="page-header">
+      <h1 class="page-title"><i class="fas fa-wrench"></i> Maintenance Request #{{ request_obj.id }}</h1>
+      <p class="page-subtitle">Details for request submitted on {{ request_obj.submitted_at|date:"M d, Y H:i" }}</p>
+    </div>
+    
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-wrench"></i> Request Details</h2>
+        <div class="card-actions">
+          {% if request_obj.status == 'pending' %}
+            <form action="{% url 'managers:approve_request' request_obj.id %}" method="post" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-primary btn-small"><i class="fas fa-check"></i> Approve</button>
+            </form>
+            <button class="btn btn-outline btn-small" onclick="openDenyModal()">Deny</button>
+          {% elif request_obj.status == 'approved' and not request_obj.assigned_task %}
+            <a href="{% url 'managers:assign_mechanic' request_obj.id %}" class="btn btn-primary btn-small"><i class="fas fa-user-cog"></i> Assign Mechanic</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="report-details">
+          <div class="detail-row">
+            <div class="detail-label">Request ID:</div>
+            <div class="detail-value">#{{ request_obj.id }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Status:</div>
+            <div class="detail-value"><span class="status-{{ request_obj.status }}">{{ request_obj.get_status_display }}</span></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Vehicle:</div>
+            <div class="detail-value">{{ request_obj.vehicle.number_plate }} ({{ request_obj.vehicle.vehicle_type|default:request_obj.vehicle.model }})</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Driver:</div>
+            <div class="detail-value">{{ request_obj.driver.user.get_full_name|default:request_obj.driver.user.username }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Date Submitted:</div>
+            <div class="detail-value">{{ request_obj.submitted_at|date:"M d, Y H:i" }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Priority:</div>
+            <div class="detail-value">
+              {% for issue in request_obj.issues.all %}
+                <span class="priority-{{ issue.priority }}">{{ issue.get_priority_display }}</span>{% if not forloop.last %}, {% endif %}
+              {% empty %}
+                N/A
+              {% endfor %}
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Issue Type:</div>
+            <div class="detail-value">
+              {% for issue in request_obj.issues.all %}
+                {{ issue.title }}{% if not forloop.last %}, {% endif %}
+              {% empty %}
+                No issues
+              {% endfor %}
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Mileage:</div>
+            <div class="detail-value">{{ request_obj.mileage }} km</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Location:</div>
+            <div class="detail-value">{{ request_obj.vehicle.location|default:"N/A" }}</div>
+          </div>
+          {% if request_obj.mechanic %}
+            <div class="detail-row">
+              <div class="detail-label">Assigned Mechanic:</div>
+              <div class="detail-value">{{ request_obj.mechanic.full_name|default:request_obj.mechanic.user.username }}</div>
+            </div>
+          {% endif %}
+          {% if request_obj.estimated_completion %}
+            <div class="detail-row">
+              <div class="detail-label">Estimated Completion:</div>
+              <div class="detail-value">{{ request_obj.estimated_completion|date:"M d, Y" }}</div>
+            </div>
+          {% endif %}
+          <div class="detail-row">
+            <div class="detail-label">Estimated Cost:</div>
+            <div class="detail-value">
+              {% for issue in request_obj.issues.all %}
+                Ksh {{ issue.cost_estimate }}{% if not forloop.last %}, {% endif %}
+              {% empty %}
+                N/A
+              {% endfor %}
+            </div>
+          </div>
+          <div class="detail-row full-width">
+            <div class="detail-label">Problem Description:</div>
+            <div class="detail-value">
+              {% for issue in request_obj.issues.all %}
+                {{ issue.description }}{% if not forloop.last %}<br>{% endif %}
+              {% empty %}
+                No description provided.
+              {% endfor %}
+            </div>
+          </div>
+          {% if request_obj.status == 'denied' %}
+            <div class="detail-row full-width">
+              <div class="detail-label">Reason for Denial:</div>
+              <div class="detail-value">{{ request_obj.last_update|default:"N/A" }}</div>
+            </div>
+          {% endif %}
+          <div class="detail-row full-width">
+            <div class="detail-label">Updates:</div>
+            <div class="detail-value">
+              <div class="activity-list">
+                <div class="activity-item">
+                  <div class="activity-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                  </div>
+                  <div class="activity-details">
+                    <p>{{ request_obj.last_update|default:"No updates available." }}</p>
+                    <div class="activity-time">{{ request_obj.submitted_at|date:"M d, Y H:i" }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a href="{% url 'managers:maintenance' %}" class="btn btn-outline btn-small"><i class="fas fa-arrow-left"></i> Back to Requests</a>
+      </div>
+    </div>
+    
+    <!-- Deny Request Modal -->
+    <div class="modal" id="denyRequestModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title"><i class="fas fa-times-circle"></i> Deny Maintenance Request #{{ request_obj.id }}</h3>
+          <button class="modal-close" onclick="closeDenyModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <form id="denyRequestForm" action="{% url 'managers:deny_request' request_obj.id %}" method="post">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="denyReason"><i class="fas fa-comment"></i> Reason for Denial</label>
+              <textarea class="form-control" id="denyReason" name="deny_reason" required></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" onclick="closeDenyModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary">Deny Request</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    function openDenyModal() {
+      console.log("Opening deny modal");
+      document.getElementById('denyRequestModal').classList.add('show');
+      document.getElementById('denyReason').focus();
+    }
+
+    function closeDenyModal() {
+      console.log("Closing deny modal");
+      document.getElementById('denyRequestModal').classList.remove('show');
+      document.getElementById('denyReason').value = '';
+    }
+
+    window.onclick = function(event) {
+      const modal = document.getElementById('denyRequestModal');
+      if (event.target === modal) {
+        closeDenyModal();
+      }
+    };
+
+    document.getElementById('denyRequestForm').addEventListener('submit', function(event) {
+      const denyReason = document.getElementById('denyReason').value.trim();
+      if (!denyReason) {
+        event.preventDefault();
+        alert('Please provide a reason for denying the request.');
+      } else {
+        console.log("Form submitted with reason:", denyReason);
+      }
+    });
+  </script>
+{% endblock %}

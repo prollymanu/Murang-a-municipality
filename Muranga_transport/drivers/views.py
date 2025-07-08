@@ -112,7 +112,6 @@ def profile_edit(request):
     }
     return render(request, 'drivers/profile_edit.html', context)
 
-@login_required
 def maintenance(request):
     user = request.user
     driver = user.driverprofile
@@ -151,7 +150,6 @@ def maintenance(request):
     }
     return render(request, 'drivers/maintenance.html', context)
 
-
 @login_required
 def request_detail(request, request_id):
     try:
@@ -175,7 +173,7 @@ def create_request(request):
 
             # Create or get vehicle
             vehicle, _ = Vehicle.objects.get_or_create(number_plate=vehicle_plate.upper(), defaults={
-                'make': 'Unknown',  # You may customize or prompt for this
+                'make': 'Unknown',
             })
 
             # Create the request

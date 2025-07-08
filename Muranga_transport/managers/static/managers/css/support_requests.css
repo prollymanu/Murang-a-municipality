@@ -1,0 +1,243 @@
+/* Additional styles for support requests page */
+.request-card {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 10px;
+}
+
+.request-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.request-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: all 0.3s ease;
+}
+
+.request-card.pending::before {
+    background-color: var(--warning-color);
+}
+
+.request-card.urgent::before {
+    background-color: var(--danger-color);
+}
+
+.request-card.resolved::before {
+    background-color: var(--success-color);
+}
+
+.request-card.provisioning::before {
+    background-color: var(--info-color);
+}
+
+.request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+}
+
+.request-title {
+    font-weight: 600;
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.request-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 13px;
+    color: var(--dark-gray);
+}
+
+.request-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.request-meta i {
+    font-size: 12px;
+}
+
+.request-content {
+    padding: 0 15px 15px;
+    color: var(--secondary-color);
+    font-size: 14px;
+    line-height: 1.6;
+    display: none;
+}
+
+.request-attachments {
+    display: none;
+    gap: 10px;
+    padding: 0 15px 15px;
+    flex-wrap: wrap;
+}
+
+.attachment-item {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--info-color);
+    transition: all 0.3s ease;
+}
+
+.attachment-item:hover {
+    background-color: rgba(25, 118, 210, 0.1);
+}
+
+.attachment-item i {
+    margin-right: 5px;
+}
+
+.response-section {
+    display: none;
+    margin-top: 0;
+    padding: 15px;
+    border-top: 1px solid var(--medium-gray);
+    background-color: rgba(46, 125, 50, 0.05);
+}
+
+.response-section h4 {
+    font-size: 15px;
+    margin-bottom: 10px;
+    color: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.response-section h4 i {
+    color: var(--primary-color);
+}
+
+.response-content {
+    background-color: var(--light-gray);
+    padding: 12px 15px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.response-form {
+    display: none;
+}
+
+.response-form textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    min-height: 100px;
+    resize: vertical;
+    margin-bottom: 10px;
+}
+
+.response-form textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.2);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-pending {
+    background-color: rgba(255, 160, 0, 0.1);
+    color: var(--warning-color);
+}
+
+.status-urgent {
+    background-color: rgba(211, 47, 47, 0.1);
+    color: var(--danger-color);
+}
+
+.status-resolved {
+    background-color: rgba(56, 142, 60, 0.1);
+    color: var(--success-color);
+}
+
+.status-provisioning {
+    background-color: rgba(25, 118, 210, 0.1);
+    color: var(--info-color);
+}
+
+.filter-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-group label {
+    font-size: 14px;
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+    font-size: 14px;
+    min-width: 150px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--dark-gray);
+}
+
+.empty-state i {
+    font-size: 40px;
+    color: var(--medium-gray);
+    margin-bottom: 15px;
+}
+
+.empty-state p {
+    font-size: 15px;
+}
+
+.request-card.expanded {
+    margin-bottom: 20px;
+}
+
+.request-card.expanded .request-content,
+.request-card.expanded .request-attachments,
+.request-card.expanded .response-section {
+    display: block;
+}
+
+.request-card.expanded .response-form {
+    display: block;
+}

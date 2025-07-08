@@ -1,0 +1,96 @@
+{% extends "managers/base.html" %}
+{% load static %}
+
+{% block title %}Assign Mechanic to Request #{{ request_obj.pk }} | Murang'a Transport{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'managers/css/styles.css' %}">
+{% endblock %}
+
+{% block content %}
+  <div class="main-content">
+    <header class="top-nav">
+      <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
+      <div class="nav-right">
+        <span class="user-greeting">{{ greeting }}, {{ name }}</span>
+        <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      </div>
+    </header>
+
+    <div class="page-header">
+      <h1 class="page-title"><i class="fas fa-tools"></i> Assign Mechanic to Request #{{ request_obj.pk }}</h1>
+      <p class="page-subtitle">Assign a mechanic to handle the maintenance request for {{ request_obj.vehicle.number_plate }}</p>
+    </div>
+
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="card">
+      <form method="get" class="filter-form">
+        <div class="filter-group">
+          <label for="q">Search Mechanics</label>
+          <input type="text" id="q" name="q" value="{{ query }}" placeholder="Search by name or ID...">
+          <button type="submit" class="btn btn-primary btn-small"><i class="fas fa-search"></i> Search</button>
+        </div>
+      </form>
+
+      <div class="mechanic-list">
+        {% if mechanics %}
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Mechanic ID</th>
+                <th>Location</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for mechanic in mechanics %}
+                <tr>
+                  <td>{{ mechanic.full_name|default:mechanic.user.username }}</td>
+                  <td>{{ mechanic.mechanic_id }}</td>
+                  <td>{{ mechanic.location|default:"N/A" }}</td>
+                  <td>
+                    <form method="post" action="{% url 'managers:assign_mechanic' request_obj.pk %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="mechanic_id" value="{{ mechanic.id }}">
+                      <button type="submit" class="btn btn-primary btn-small">Assign</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          {% if page_obj.has_other_pages %}
+            <div class="pagination">
+              {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline btn-small">&laquo; Previous</a>
+              {% endif %}
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <span class="btn btn-primary btn-small active">{{ num }}</span>
+                {% else %}
+                  <a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline btn-small">{{ num }}</a>
+                {% endif %}
+              {% endfor %}
+              {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline btn-small">Next &raquo;</a>
+              {% endif %}
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="no-mechanics">No mechanics found matching your search.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,526 @@
+{% extends "managers/base.html" %}
+{% load static %}
+
+{% block title %}Settings | Murang'a Transport{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'managers/css/settings.css' %}">
+{% endblock %}
+
+{% block content %}
+  
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <button class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="nav-right">
+        <span class="user-greeting">
+          {% if user %}
+            Welcome, {{ user.first_name|default:"Transport Manager" }}
+          {% else %}
+            Welcome, Transport Manager
+          {% endif %}
+        </span>
+        <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      </div>
+    </header>
+    
+    <div class="page-content">
+      <!-- Page Header -->
+      <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-cog"></i> Settings</h1>
+        <div class="page-actions">
+          <button class="btn btn-primary" id="saveAllSettings">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+        </div>
+      </div>
+      
+      <!-- Settings Container -->
+      <div class="settings-container">
+        <!-- Settings Menu -->
+        <div class="settings-menu">
+          <div class="settings-menu-item active" data-section="profile">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+          </div>
+          <div class="settings-menu-item" data-section="account">
+            <i class="fas fa-key"></i>
+            <span>Account Security</span>
+          </div>
+          <div class="settings-menu-item" data-section="notifications">
+            <i class="fas fa-bell"></i>
+            <span>Notifications</span>
+          </div>
+          <div class="settings-menu-item" data-section="preferences">
+            <i class="fas fa-sliders-h"></i>
+            <span>System Preferences</span>
+          </div>
+          <div class="settings-menu-item" data-section="integrations">
+            <i class="fas fa-plug"></i>
+            <span>Integrations</span>
+          </div>
+          <div class="settings-menu-item" data-section="team">
+            <i class="fas fa-users"></i>
+            <span>Team Management</span>
+          </div>
+        </div>
+        
+        <!-- Settings Content -->
+        <div class="settings-content">
+          <!-- Profile Section -->
+          <div class="settings-section" id="profile-section">
+            <div class="profile-header">
+              <img src="{% static 'managers/images/murangalogo.png' %}" alt="Profile" class="profile-avatar" id="profileImage">
+              <div class="profile-info">
+                <h3 id="profileName">Transport Manager</h3>
+                <p>Administrator</p>
+              </div>
+            </div>
+            
+            <form id="profileForm">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="firstName">First Name</label>
+                  <input type="text" id="firstName" class="form-control" value="Transport">
+                </div>
+                <div class="form-group">
+                  <label for="lastName">Last Name</label>
+                  <input type="text" id="lastName" class="form-control" value="Manager">
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" class="form-control" value="transport.manager@muranga.go.ke">
+              </div>
+              
+              <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" class="form-control" value="+254 712 345 678">
+              </div>
+              
+              <div class="form-group">
+                <label for="department">Department</label>
+                <input type="text" id="department" class="form-control" value="Transport & Logistics">
+              </div>
+              
+              <div class="form-group">
+                <label for="position">Position</label>
+                <input type="text" id="position" class="form-control" value="Transport Manager">
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelProfileChanges">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Profile</button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Account Security Section -->
+          <div class="settings-section" id="account-section" style="display: none;">
+            <h2>Account Security</h2>
+            
+            <form id="securityForm">
+              <div class="form-group">
+                <label for="currentPassword">Current Password</label>
+                <input type="password" id="currentPassword" class="form-control" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <input type="password" id="newPassword" class="form-control" required>
+                <small class="text-muted">Minimum 8 characters with at least one number and special character</small>
+              </div>
+              
+              <div class="form-group">
+                <label for="confirmPassword">Confirm New Password</label>
+                <input type="password" id="confirmPassword" class="form-control" required>
+              </div>
+              
+              <div class="form-group">
+                <label>Two-Factor Authentication</label>
+                <div class="preference-item">
+                  <div class="preference-label">
+                    <h4>Enable Two-Factor Authentication</h4>
+                    <p>Add an extra layer of security to your account</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="twoFactorToggle">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelSecurityChanges">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Security Settings</button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Notifications Section -->
+          <div class="settings-section" id="notifications-section" style="display: none;">
+            <h2>Notification Preferences</h2>
+            
+            <form id="notificationsForm">
+              <div class="form-group">
+                <label>Email Notifications</label>
+                <div class="notification-item">
+                  <div class="notification-label">
+                    <h4>Maintenance Alerts</h4>
+                    <p>Receive notifications for scheduled maintenance and repairs</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="maintenanceAlerts" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="notification-item">
+                  <div class="notification-label">
+                    <h4>Assignment Updates</h4>
+                    <p>Get notified when new assignments are created or updated</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="assignmentUpdates" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="notification-item">
+                  <div class="notification-label">
+                    <h4>Invoice Approvals</h4>
+                    <p>Receive notifications when invoices require approval</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="invoiceApprovals">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>Push Notifications</label>
+                <div class="notification-item">
+                  <div class="notification-label">
+                    <h4>Urgent Alerts</h4>
+                    <p>Receive push notifications for urgent matters</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="urgentAlerts" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="notification-item">
+                  <div class="notification-label">
+                    <h4>Daily Summary</h4>
+                    <p>Get a daily summary of fleet activities</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="dailySummary">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelNotificationChanges">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Notification Settings</button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- System Preferences Section -->
+          <div class="settings-section" id="preferences-section" style="display: none;">
+            <h2>System Preferences</h2>
+            
+            <form id="preferencesForm">
+              <div class="form-group">
+                <label for="language">Language</label>
+                <select id="language" class="form-control">
+                  <option>English</option>
+                  <option>Swahili</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="timezone">Timezone</label>
+                <select id="timezone" class="form-control">
+                  <option value="Africa/Nairobi" selected>East Africa Time (EAT) - Nairobi</option>
+                  <option value="UTC">UTC</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="dateFormat">Date Format</label>
+                <select id="dateFormat" class="form-control">
+                  <option value="dd/mm/yyyy">DD/MM/YYYY</option>
+                  <option value="mm/dd/yyyy">MM/DD/YYYY</option>
+                  <option value="yyyy-mm-dd">YYYY-MM-DD</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Display Preferences</label>
+                <div class="preference-item">
+                  <div class="preference-label">
+                    <h4>Dark Mode</h4>
+                    <p>Switch between light and dark color schemes</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="preference-item">
+                  <div class="preference-label">
+                    <h4>Compact View</h4>
+                    <p>Show more content with a denser layout</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="compactViewToggle">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelPreferenceChanges">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Preferences</button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Integrations Section -->
+          <div class="settings-section" id="integrations-section" style="display: none;">
+            <h2>System Integrations</h2>
+            
+            <form id="integrationsForm">
+              <div class="form-group">
+                <label>Connected Services</label>
+                <div class="notification-item">
+                  <div class="notification-label">
+                    <h4>Fuel Management System</h4>
+                    <p>Integrate with the municipal fuel tracking system</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="fuelSystemToggle" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="notification-item">
+                  <div class="notification-label">
+                    <h4>ERP System</h4>
+                    <p>Connect with the municipal ERP for financial data</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="erpSystemToggle">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="notification-item">
+                  <div class="notification-label">
+                    <h4>Maintenance Providers</h4>
+                    <p>Connect with approved maintenance service providers</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="maintenanceProvidersToggle">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="apiKey">API Key</label>
+                <input type="text" id="apiKey" class="form-control" value="mta_7x9j2p5q8r3s6t4" readonly>
+                <div class="api-key-actions">
+                  <button type="button" class="btn btn-outline" id="copyApiKey">
+                    <i class="fas fa-copy"></i> Copy Key
+                  </button>
+                  <button type="button" class="btn btn-outline" id="regenerateApiKey">
+                    <i class="fas fa-sync-alt"></i> Regenerate
+                  </button>
+                </div>
+                <small class="text-muted">Use this key to connect external services</small>
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelIntegrationChanges">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Integrations</button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Team Management Section -->
+          <div class="settings-section" id="team-section" style="display: none;">
+            <h2>Team Management</h2>
+            
+            <div class="form-group">
+              <div class="card-header">
+                <h3>Team Members (<span id="teamMembersCount">3</span>)</h3>
+                <button class="btn btn-primary" id="addMemberBtn">
+                  <i class="fas fa-plus"></i> Add Member
+                </button>
+              </div>
+              <table class="mini-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="teamMembersList">
+                  <tr data-member-id="1">
+                    <td>John Kamau</td>
+                    <td>john.kamau@muranga.go.ke</td>
+                    <td>Fleet Supervisor</td>
+                    <td><span class="status-badge status-active">Active</span></td>
+                    <td>
+                      <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline edit-member"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline delete-member"><i class="fas fa-trash"></i></button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr data-member-id="2">
+                    <td>Mary Wanjiku</td>
+                    <td>mary.wanjiku@muranga.go.ke</td>
+                    <td>Maintenance Coordinator</td>
+                    <td><span class="status-badge status-active">Active</span></td>
+                    <td>
+                      <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline edit-member"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline delete-member"><i class="fas fa-trash"></i></button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr data-member-id="3">
+                    <td>Peter Otieno</td>
+                    <td>peter.otieno@muranga.go.ke</td>
+                    <td>Driver Manager</td>
+                    <td><span class="status-badge status-inactive">Inactive</span></td>
+                    <td>
+                      <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline edit-member"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline delete-member"><i class="fas fa-trash"></i></button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Add Team Member Modal -->
+    <div id="addMemberModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-user-plus"></i> Add Team Member</h3>
+          <button class="close-modal">×</button>
+        </div>
+        <div class="modal-body">
+          <form id="addMemberForm">
+            <div class="form-group">
+              <label for="memberName">Full Name</label>
+              <input type="text" id="memberName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="memberEmail">Email Address</label>
+              <input type="email" id="memberEmail" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="memberRole">Role</label>
+              <select id="memberRole" class="form-control" required>
+                <option value="">Select Role</option>
+                <option value="Fleet Supervisor">Fleet Supervisor</option>
+                <option value="Maintenance Coordinator">Maintenance Coordinator</option>
+                <option value="Driver Manager">Driver Manager</option>
+                <option value="Transport Officer">Transport Officer</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancelAddMember">Cancel</button>
+          <button type="button" class="btn btn-primary" id="confirmAddMember">Add Member</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Edit Team Member Modal -->
+    <div id="editMemberModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-user-edit"></i> Edit Team Member</h3>
+          <button class="close-modal">×</button>
+        </div>
+        <div class="modal-body">
+          <form id="editMemberForm">
+            <input type="hidden" id="editMemberId">
+            <div class="form-group">
+              <label for="editMemberName">Full Name</label>
+              <input type="text" id="editMemberName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="editMemberEmail">Email Address</label>
+              <input type="email" id="editMemberEmail" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="editMemberRole">Role</label>
+              <select id="editMemberRole" class="form-control" required>
+                <option value="">Select Role</option>
+                <option value="Fleet Supervisor">Fleet Supervisor</option>
+                <option value="Maintenance Coordinator">Maintenance Coordinator</option>
+                <option value="Driver Manager">Driver Manager</option>
+                <option value="Transport Officer">Transport Officer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="editMemberStatus">Status</label>
+              <select id="editMemberStatus" class="form-control" required>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancelEditMember">Cancel</button>
+          <button type="button" class="btn btn-primary" id="saveMemberChanges">Save Changes</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteMemberModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
+          <button class="close-modal">×</button>
+        </div>
+        <div class="modal-body confirmation-dialog">
+          <i class="fas fa-exclamation-circle"></i>
+          <h4>Are you sure you want to delete this team member?</h4>
+          <p>This action cannot be undone. The member will lose all access to the system.</p>
+          <p><strong id="memberToDelete"></strong></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancelDeleteMember">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteMember">Delete Member</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'managers/js/settings.js' %}"></script>
+{% endblock %}

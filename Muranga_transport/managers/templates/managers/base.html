@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Murang'a Transport{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Base CSS -->
+    <link rel="stylesheet" href="{% static 'managers/css/base.css' %}">
+    <!-- Page Specific CSS -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="{% static 'managers/images/murangalogo.png' %}" alt="Murang'a Logo">
+            <h3>Transport Manager</h3>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="{% url 'managers:dashboard' %}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{% url 'managers:job_management' %}"><i class="fas fa-truck"></i> Job Management</a></li>
+                <li><a href="{% url 'managers:maintenance' %}"><i class="fas fa-wrench"></i> Maintenance</a></li>
+                <li><a href="{% url 'managers:applications' %}"><i class="fas fa-wrench"></i> Applications</a></li>
+                <li><a href="{% url 'managers:reports' %}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="{% url 'managers:repair_invoices' %}"><i class="fas fa-file-invoice-dollar"></i> Repair Invoices</a></li>
+                <li><a href="{% url 'managers:support_requests' %}"><i class="fas fa-headset"></i> Support Requests</a></li>
+                <li><a href="{% url 'managers:settings' %}"><i class="fas fa-cog"></i> Settings</a></li>
+                <!--SECURE LOGOUT FORM -->
+                <li>
+                    <form action="{% url 'core:logout' %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" style="
+                            background: none;
+                            border: none;
+                            color: inherit;
+                            font: inherit;
+                            cursor: pointer;
+                            padding: 0;
+                            display: flex;
+                            align-items: center;
+                        ">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <!-- Main Content -->
+    <div class="main-content">
+        {% block content %}
+        <!-- Page-specific content -->
+        {% endblock %}
+    </div>
+    <!-- Common JS -->
+    <script src="{% static 'managers/js/main.js' %}"></script>
+    <!-- Page Specific JS -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

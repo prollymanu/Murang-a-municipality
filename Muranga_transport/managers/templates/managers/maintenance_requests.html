@@ -1,0 +1,228 @@
+{% extends "managers/base.html" %}
+{% load static %}
+
+{% block title %}Maintenance Requests | Murang'a Transport{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'managers/css/maintenance_requests.css' %}">
+{% endblock %}
+
+{% block content %}
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <button class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="nav-right">
+        <span class="user-greeting">
+          {{ greeting }}, {{ name }}
+        </span>
+        <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      </div>
+    </header>
+    
+    <div class="page-header">
+      <h1 class="page-title"><i class="fas fa-wrench"></i> Maintenance Requests</h1>
+      <div class="page-actions">
+        <button class="btn btn-primary" id="exportBtn">
+          <i class="fas fa-file-export"></i> Export
+        </button>
+      </div>
+    </div>
+    
+    <!-- Messages -->
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    <!-- Filters -->
+    <div class="table-filters">
+      <div class="filter-group">
+        <label>Status:</label>
+        <select id="statusFilter" name="status">
+          <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All Statuses</option>
+          {% for status_value, status_display in status_choices %}
+            <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>{{ status_display }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Priority:</label>
+        <select id="priorityFilter" name="priority">
+          <option value="all" {% if selected_priority == 'all' %}selected{% endif %}>All Priorities</option>
+          {% for priority_value, priority_display in priority_choices %}
+            <option value="{{ priority_value }}" {% if selected_priority == priority_value %}selected{% endif %}>{{ priority_display }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Vehicle:</label>
+        <select id="vehicleFilter" name="vehicle">
+          <option value="all" {% if selected_vehicle == 'all' %}selected{% endif %}>All Vehicles</option>
+          {% for vehicle in vehicles %}
+            <option value="{{ vehicle.number_plate }}" {% if selected_vehicle == vehicle.number_plate %}selected{% endif %}>{{ vehicle }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" name="q" placeholder="Search requests..." value="{{ query }}">
+      </div>
+    </div>
+    
+    <!-- Requests Table -->
+    <div class="card">
+      <div class="table-responsive">
+        <table class="personnel-table">
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Vehicle</th>
+              <th>Issue Type</th>
+              <th>Priority</th>
+              <th>Driver</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="requestsTableBody">
+            {% for request in maintenance_requests %}
+              <tr>
+                <td>#{{ request.pk }}</td>
+                <td>{{ request.vehicle }}</td>
+                <td>
+                  {% for issue in request.issues.all %}
+                    {{ issue.title }}{% if not forloop.last %}, {% endif %}
+                  {% empty %}
+                    No issues
+                  {% endfor %}
+                </td>
+                <td>
+                  {% for issue in request.issues.all %}
+                    <span class="priority-{{ issue.priority }}">{{ issue.get_priority_display }}</span>{% if not forloop.last %}, {% endif %}
+                  {% empty %}
+                    N/A
+                  {% endfor %}
+                </td>
+                <td>{{ request.driver.user.get_full_name|default:request.driver.user.username }}</td>
+                <td>{{ request.submitted_at|date:"M d, Y" }}</td>
+                <td><span class="status-{{ request.status }}">{{ request.get_status_display }}</span></td>
+                <td>
+                  {% if request.status == 'pending' %}
+                    <form action="{% url 'managers:approve_request' request.id %}" method="post" style="display:inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-primary btn-small">Approve</button>
+                    </form>
+                    <button class="btn btn-outline btn-small" onclick="openDenyModal({{ request.id }})">Deny</button>
+                  {% elif request.status == 'approved' and not request.mechanic %}
+                    <a href="{% url 'managers:assign_mechanic' request.id %}" class="btn btn-primary btn-small">Assign Mechanic</a>
+                  {% endif %}
+                  <a href="{% url 'managers:request_detail' request.id %}" class="btn btn-outline btn-small">View</a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="8">No maintenance requests found.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+        <div class="table-pagination">
+          <div>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries</div>
+          <div class="pagination-controls">
+            {% if page_obj.has_previous %}
+              <a href="?page={{ page_obj.previous_page_number }}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_priority %}&priority={{ selected_priority }}{% endif %}{% if selected_vehicle %}&vehicle={{ selected_vehicle }}{% endif %}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline"><i class="fas fa-angle-double-left"></i></a>
+              <a href="?page={{ page_obj.previous_page_number }}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_priority %}&priority={{ selected_priority }}{% endif %}{% if selected_vehicle %}&vehicle={{ selected_vehicle }}{% endif %}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline"><i class="fas fa-angle-left"></i></a>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+              <a href="?page={{ num }}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_priority %}&priority={{ selected_priority }}{% endif %}{% if selected_vehicle %}&vehicle={{ selected_vehicle }}{% endif %}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline {% if page_obj.number == num %}active{% endif %}">{{ num }}</a>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_priority %}&priority={{ selected_priority }}{% endif %}{% if selected_vehicle %}&vehicle={{ selected_vehicle }}{% endif %}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline"><i class="fas fa-angle-right"></i></a>
+              <a href="?page={{ page_obj.next_page_number }}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_priority %}&priority={{ selected_priority }}{% endif %}{% if selected_vehicle %}&vehicle={{ selected_vehicle }}{% endif %}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline"><i class="fas fa-angle-double-right"></i></a>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    
+    <!-- Deny Request Modal -->
+    <div class="modal" id="denyRequestModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title"><i class="fas fa-times-circle"></i> Deny Maintenance Request</h3>
+          <button class="modal-close" onclick="closeDenyModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <form id="denyRequestForm" action="{% url 'managers:deny_request' 0 %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" id="denyRequestId" name="request_id">
+            <div class="form-group">
+              <label for="denyReason"><i class="fas fa-comment"></i> Reason for Denial</label>
+              <textarea class="form-control" id="denyReason" name="deny_reason" required></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" onclick="closeDenyModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary">Deny Request</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    function openDenyModal(requestId) {
+      document.getElementById('denyRequestId').value = requestId;
+      document.getElementById('denyRequestForm').action = `/managers/pending-requests/${requestId}/deny/`;
+      document.getElementById('denyRequestModal').style.display = 'block';
+    }
+    function closeDenyModal() {
+      document.getElementById('denyRequestModal').style.display = 'none';
+      document.getElementById('denyReason').value = '';
+      document.getElementById('denyRequestId').value = '';
+      document.getElementById('denyRequestForm').action = '';
+    }
+    document.getElementById('statusFilter').addEventListener('change', function() {
+      const url = new URL(window.location);
+      url.searchParams.set('status', this.value);
+      url.searchParams.delete('page');
+      window.location = url;
+    });
+    document.getElementById('priorityFilter').addEventListener('change', function() {
+      const url = new URL(window.location);
+      url.searchParams.set('priority', this.value);
+      url.searchParams.delete('page');
+      window.location = url;
+    });
+    document.getElementById('vehicleFilter').addEventListener('change', function() {
+      const url = new URL(window.location);
+      url.searchParams.set('vehicle', this.value);
+      url.searchParams.delete('page');
+      window.location = url;
+    });
+    document.getElementById('searchInput').addEventListener('input', function() {
+      const url = new URL(window.location);
+      url.searchParams.set('q', this.value);
+      url.searchParams.delete('page');
+      window.location = url;
+    });
+  </script>
+  <script src="{% static 'managers/js/maintenance_requests.js' %}"></script>
+{% endblock %}

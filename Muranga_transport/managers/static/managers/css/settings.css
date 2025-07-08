@@ -1,0 +1,49 @@
+/* Additional styles for API key buttons */
+.api-key-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.api-key-actions .btn {
+    width: auto; /* or specific width like 120px */
+    min-width: 100px; /* optional minimum width */
+}
+
+/* Modal footer button alignment */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 20px;
+    border-top: 1px solid var(--medium-gray);
+    margin-top: 20px;
+}
+
+/* Close button styling */
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--dark-gray);
+    cursor: pointer;
+    padding: 5px;
+    transition: all 0.3s ease;
+    line-height: 1;
+}
+
+.close-modal:hover {
+    color: var(--danger-color);
+    transform: rotate(90deg);
+}
+
+/* Action buttons in tables */
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-icon {
+    padding: 5px 8px;
+    min-width: 30px;
+}

@@ -31,7 +31,7 @@ def generate_driver_id():
     prefix = "DI"
     suffix = get_random_string(length=4, allowed_chars=string.ascii_uppercase + string.digits)
     return f"{prefix}{suffix}"
-
+        
 class LicenseClass(models.Model):
     code = models.CharField(max_length=5, choices=KENYA_LICENSE_CLASSES, unique=True)
 
@@ -45,11 +45,11 @@ class Certification(models.Model):
         return self.get_code_display()
 
 class DriverProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     driver_id = models.CharField(max_length=20, unique=True)
     phone_number = models.CharField(max_length=15, blank=True)
-    profile_image = models.ImageField(upload_to='driver_profiles/', blank=True, null=True)  
-    license_class = models.CharField(max_length=100, blank=True) 
+    profile_image = models.ImageField(upload_to='driver_profiles/', blank=True, null=True)
+    license_class = models.CharField(max_length=100, blank=True)
     experience_years = models.PositiveIntegerField(default=0)
     department = models.CharField(max_length=100, blank=True)
     supervisor = models.CharField(max_length=100, blank=True)
@@ -64,17 +64,18 @@ class DriverProfile(models.Model):
         if self.license_class:
             return self.license_class.split(',')
         return []
-    
+
 class Vehicle(models.Model):
     number_plate = models.CharField(max_length=15, unique=True)
     make = models.CharField(max_length=50)
     model = models.CharField(max_length=50, blank=True)
     year = models.PositiveIntegerField(blank=True, null=True)
     mileage = models.PositiveIntegerField(default=0)
+    vehicle_type = models.CharField(max_length=50, blank=True)  # Added
+    location = models.CharField(max_length=100, blank=True)     # Added
 
     def __str__(self):
         return f"{self.make} {self.model} ({self.number_plate})"
-
 
 class MaintenanceRequest(models.Model):
     STATUS_CHOICES = [
@@ -82,38 +83,28 @@ class MaintenanceRequest(models.Model):
         ('approved', 'Approved'),
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'),
+        ('denied', 'Denied'),
     ]
-
     PRIORITY_CHOICES = [
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High'),
     ]
 
-    driver = models.ForeignKey('drivers.DriverProfile', on_delete=models.CASCADE)
+    driver = models.ForeignKey(DriverProfile, on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT)
     mileage = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     submitted_at = models.DateTimeField(auto_now_add=True)
     approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='approved_requests')
-    
-    mechanic = models.ForeignKey(   # ← ✅ ADD THIS FIELD
-        MechanicProfile,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name='assigned_requests',
-        help_text="Mechanic assigned to this maintenance request"
-    )
-
+    mechanic = models.ForeignKey(
+        MechanicProfile, null=True, blank=True, on_delete=models.SET_NULL, related_name='assigned_requests')
     estimated_completion = models.DateField(null=True, blank=True)
     last_update = models.TextField(blank=True)
 
     def __str__(self):
         return f"Request #{self.pk} - {self.vehicle.number_plate} - {self.status}"
-
-
 
 class RequestIssue(models.Model):
     request = models.ForeignKey(MaintenanceRequest, on_delete=models.CASCADE, related_name='issues')
@@ -124,7 +115,6 @@ class RequestIssue(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.priority})"
-
 
 class SupportRequest(models.Model):
     STATUS_CHOICES = [

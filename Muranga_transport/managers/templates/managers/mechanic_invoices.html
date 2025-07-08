@@ -1,0 +1,177 @@
+{% extends "managers/base.html" %}
+{% load static %}
+
+{% block title %}Repair Invoices | Municipality Transport{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'managers/css/mechanic_invoices.css' %}">
+{% endblock %}
+
+{% block content %}
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <button class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="nav-right">
+        <span class="user-greeting">
+          {% if user %}
+            Welcome, {{ user.first_name|default:"Transport Manager" }}
+          {% else %}
+            Welcome, Transport Manager
+          {% endif %}
+        </span>
+        <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      </div>
+    </header>
+    
+    <div class="page-content">
+      <!-- Page Header -->
+      <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-file-invoice-dollar"></i> Repair Invoices</h1>
+        <div class="page-actions">
+          <button class="btn btn-primary" id="exportBtn">
+            <i class="fas fa-file-export"></i> Export
+          </button>
+          <button class="btn btn-primary" id="filterBtn">
+            <i class="fas fa-filter"></i> Filter
+          </button>
+        </div>
+      </div>
+      
+      <!-- Summary Cards -->
+      <div class="summary-cards">
+        <div class="summary-card total-paid">
+          <h3>Total Paid</h3>
+          <p class="amount">Ksh 87,500.00</p>
+          <small>Last 30 days</small>
+        </div>
+        <div class="summary-card pending-approval">
+          <h3>Pending Approval</h3>
+          <p class="amount">Ksh 24,750.00</p>
+          <small>3 invoices</small>
+        </div>
+        <div class="summary-card rejected-invoices">
+          <h3>Rejected Invoices</h3>
+          <p class="amount">Ksh 15,300.00</p>
+          <small>2 invoices</small>
+        </div>
+      </div>
+      
+      <!-- Export Options -->
+      <div class="export-options">
+        <button class="btn-export">
+          <i class="fas fa-file-pdf"></i> Export as PDF
+        </button>
+        <button class="btn-export">
+          <i class="fas fa-file-excel"></i> Export as Excel
+        </button>
+      </div>
+      
+      <!-- Filters Section -->
+      <div class="invoice-filters">
+        <div class="filter-group">
+          <label for="invoice-status">Status</label>
+          <select id="invoice-status">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending Approval</option>
+            <option value="approved">Approved</option>
+实力            <option value="paid">Paid</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="invoice-type">Type</label>
+          <select id="invoice-type">
+            <option value="all">All Types</option>
+            <option value="repair">Repair</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="parts">Parts</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="mechanic">Mechanic</label>
+          <select id="mechanic">
+            <option value="all">All Mechanics</option>
+            <option value="skeff">Skeff David</option>
+            <option value="james">James Mutua</option>
+            <option value="susan">Susan Njoroge</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="date-range">Date Range</label>
+          <div class="date-range-picker">
+            <input type="date" id="start-date" class="form-control">
+            <span>to</span>
+            <input type="date" id="end-date" class="form-control">
+          </div>
+        </div>
+        
+        <div class="search-box filter-group">
+          <label for="invoice-search">Search</label>
+          <i class="fas fa-search"></i>
+          <input type="text" id="invoice-search" placeholder="Search invoices...">
+        </div>
+      </div>
+      
+      <!-- Invoices Table -->
+      <div class="table-responsive">
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Vehicle</th>
+              <th>Mechanic</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Invoice rows will be populated here -->
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="pagination">
+        <div class="entries-info">Showing 1 to 5 of 15 entries</div>
+        <div class="page-controls">
+          <div class="page-btn disabled"><i class="fas fa-chevron-left"></i></div>
+          <div class="page-btn active">1</div>
+          <div class="page-btn">2</div>
+          <div class="page-btn">3</div>
+          <div class="page-btn"><i class="fas fa-chevron-right"></i></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Invoice Details Modal -->
+    <div id="invoiceModal" class="invoice-details-modal">
+      <!-- Modal content will be populated by JavaScript -->
+    </div>
+    
+    <!-- Approval Modal -->
+    <div id="approvalModal" class="approval-modal">
+      <!-- Modal content will be populated by JavaScript -->
+    </div>
+    
+    <!-- Rejection Modal -->
+    <div id="rejectionModal" class="approval-modal">
+      <!-- Modal content will be populated by JavaScript -->
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="{% static 'managers/js/mechanic_invoices.js' %}"></script>
+{% endblock %}

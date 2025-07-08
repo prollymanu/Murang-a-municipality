@@ -1,0 +1,270 @@
+{% extends "managers/base.html" %}
+{% load static %}
+
+{% block title %}Support Requests | Murang'a Transport{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'managers/css/support_requests.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+        <button class="sidebar-toggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="nav-right">
+            <span class="user-greeting">
+                {% if user %}
+                    Welcome, {{ user.first_name|default:"Transport Manager" }}
+                {% else %}
+                    Welcome, Transport Manager
+                {% endif %}
+            </span>
+            <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+        </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <main class="dashboard-content">
+        <div class="page-header">
+            <h1 class="page-title"><i class="fas fa-headset"></i> Support Requests</h1>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="refreshRequests">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="filterStatus">Status:</label>
+                    <select id="filterStatus" class="form-control">
+                        <option value="all">All Requests</option>
+                        <option value="pending">Pending</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="provisioning">Provisioning</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterType">Request From:</label>
+                    <select id="filterType" class="form-control">
+                        <option value="all">All Users</option>
+                        <option value="driver">Drivers</option>
+                        <option value="mechanic">Mechanics</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="searchRequests">Search:</label>
+                    <input type="text" id="searchRequests" class="form-control" placeholder="Search requests...">
+                </div>
+            </div>
+            
+            <div id="requestsList">
+                <!-- Sample request items - these would be dynamically loaded in a real application -->
+                <div class="card request-card pending">
+                    <div class="request-header">
+                        <h3 class="request-title">
+                            <i class="fas fa-exclamation-triangle"></i> Vehicle Assignment Issue
+                            <span class="status-badge status-pending">
+                                <i class="fas fa-clock"></i> Pending
+                            </span>
+                        </h3>
+                        <div class="request-meta">
+                            <span><i class="fas fa-user"></i> James Mwangi (Driver)</span>
+                            <span><i class="fas fa-calendar-alt"></i> 15 Jun 2023</span>
+                            <span><i class="fas fa-clock"></i> 10:45 AM</span>
+                        </div>
+                    </div>
+                    <div class="request-content">
+                        <p>I'm unable to see the vehicle assigned to me in the system. It shows as unassigned even though I was assigned last week. This is affecting my ability to submit daily reports and receive assignments.</p>
+                    </div>
+                    <div class="request-attachments">
+                        <a href="#" class="attachment-item">
+                            <i class="fas fa-file-image"></i> screenshot1.png
+                        </a>
+                        <a href="#" class="attachment-item">
+                            <i class="fas fa-file-pdf"></i> assignment_doc.pdf
+                        </a>
+                    </div>
+                    <div class="response-section">
+                        <h4><i class="fas fa-reply"></i> Previous Responses</h4>
+                        <div class="response-content">
+                            <p>We're looking into this issue with the vehicle assignment system. Please bear with us while we investigate.</p>
+                            <p class="response-meta">- Admin, 15 Jun 2023 11:30 AM</p>
+                        </div>
+                    </div>
+                    <div class="response-form">
+                        <h4><i class="fas fa-reply"></i> Add Response</h4>
+                        <textarea placeholder="Type your response here..."></textarea>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary cancel-response">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary send-response">
+                                <i class="fas fa-paper-plane"></i> Send Response
+                            </button>
+                            <button type="button" class="btn btn-success mark-resolved">
+                                <i class="fas fa-check"></i> Mark as Resolved
+                            </button>
+                            <button type="button" class="btn btn-info mark-provisioning">
+                                <i class="fas fa-cogs"></i> Mark as Provisioning
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card request-card urgent">
+                    <div class="request-header">
+                        <h3 class="request-title">
+                            <i class="fas fa-exclamation-circle"></i> Login Problems
+                            <span class="status-badge status-urgent">
+                                <i class="fas fa-exclamation"></i> Urgent
+                            </span>
+                        </h3>
+                        <div class="request-meta">
+                            <span><i class="fas fa-user"></i> Peter Kamau (Mechanic)</span>
+                            <span><i class="fas fa-calendar-alt"></i> 12 Jun 2023</span>
+                            <span><i class="fas fa-clock"></i> 3:20 PM</span>
+                        </div>
+                    </div>
+                    <div class="request-content">
+                        <p>I keep getting an error when trying to log in to the system. My credentials are correct but it says invalid login. I need to access the system urgently to submit repair invoices for today's work.</p>
+                    </div>
+                    <div class="request-attachments">
+                        <a href="#" class="attachment-item">
+                            <i class="fas fa-file-image"></i> error_screenshot.png
+                        </a>
+                    </div>
+                    <div class="response-section">
+                        <h4><i class="fas fa-reply"></i> Previous Responses</h4>
+                        <div class="response-content">
+                            <p>We've reset your password and sent the new credentials to your registered email address. Please try logging in again and let us know if you still experience issues.</p>
+                            <p class="response-meta">- Admin, 12 Jun 2023 4:05 PM</p>
+                        </div>
+                    </div>
+                    <div class="response-form">
+                        <h4><i class="fas fa-reply"></i> Add Response</h4>
+                        <textarea placeholder="Type your response here..."></textarea>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary cancel-response">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary send-response">
+                                <i class="fas fa-paper-plane"></i> Send Response
+                            </button>
+                            <button type="button" class="btn btn-success mark-resolved">
+                                <i class="fas fa-check"></i> Mark as Resolved
+                            </button>
+                            <button type="button" class="btn btn-info mark-provisioning">
+                                <i class="fas fa-cogs"></i> Mark as Provisioning
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card request-card provisioning">
+                    <div class="request-header">
+                        <h3 class="request-title">
+                            <i class="fas fa-cogs"></i> New Tool Request
+                            <span class="status-badge status-provisioning">
+                                <i class="fas fa-cogs"></i> Provisioning
+                            </span>
+                        </h3>
+                        <div class="request-meta">
+                            <span><i class="fas fa-user"></i> David Mwangi (Mechanic)</span>
+                            <span><i class="fas fa-calendar-alt"></i> 10 Jun 2023</span>
+                            <span><i class="fas fa-clock"></i> 9:00 AM</span>
+                        </div>
+                    </div>
+                    <div class="request-content">
+                        <p>Requesting a new diagnostic tool for the workshop. The current one is outdated and doesn't support the newer vehicle models we're servicing. Specifically need the XYZ Model 2023 diagnostic scanner.</p>
+                    </div>
+                    <div class="request-attachments">
+                        <a href="#" class="attachment-item">
+                            <i class="fas fa-file-pdf"></i> tool_specs.pdf
+                        </a>
+                        <a href="#" class="attachment-item">
+                            <i class="fas fa-file-image"></i> current_tool.jpg
+                        </a>
+                    </div>
+                    <div class="response-section">
+                        <h4><i class="fas fa-reply"></i> Previous Responses</h4>
+                        <div class="response-content">
+                            <p>Your request has been approved and the tool has been ordered. Expected delivery date is June 25th.</p>
+                            <p class="response-meta">- Admin, 11 Jun 2023 2:15 PM</p>
+                        </div>
+                    </div>
+                    <div class="response-form">
+                        <h4><i class="fas fa-reply"></i> Add Response</h4>
+                        <textarea placeholder="Type your response here..."></textarea>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary cancel-response">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary send-response">
+                                <i class="fas fa-paper-plane"></i> Send Response
+                            </button>
+                            <button type="button" class="btn btn-success mark-resolved">
+                                <i class="fas fa-check"></i> Mark as Resolved
+                            </button>
+                            <button type="button" class="btn btn-info mark-provisioning">
+                                <i class="fas fa-cogs"></i> Mark as Provisioning
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card request-card resolved">
+                    <div class="request-header">
+                        <h3 class="request-title">
+                            <i class="fas fa-check-circle"></i> Report Submission Error
+                            <span class="status-badge status-resolved">
+                                <i class="fas fa-check"></i> Resolved
+                            </span>
+                        </h3>
+                        <div class="request-meta">
+                            <span><i class="fas fa-user"></i> Sarah Wambui (Driver)</span>
+                            <span><i class="fas fa-calendar-alt"></i> 5 Jun 2023</span>
+                            <span><i class="fas fa-clock"></i> 9:15 AM</span>
+                        </div>
+                    </div>
+                    <div class="request-content">
+                        <p>When I try to submit my daily report, I get an error message saying "Form incomplete" even though I've filled all required fields. I've tried different browsers but the issue persists.</p>
+                    </div>
+                    <div class="response-section">
+                        <h4><i class="fas fa-reply"></i> Previous Responses</h4>
+                        <div class="response-content">
+                            <p>This was caused by a system update that affected some report forms. We've fixed the issue and you should now be able to submit your reports without problems.</p>
+                            <p class="response-meta">- Admin, 5 Jun 2023 11:30 AM</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="empty-state" id="noRequests" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <h3>No Support Requests Found</h3>
+                <p>There are currently no support requests matching your filters.</p>
+            </div>
+            
+            <div class="table-pagination">
+                <div>Showing 1 to 4 of 4 entries</div>
+                <div class="pagination-controls">
+                    <button disabled><i class="fas fa-angle-left"></i></button>
+                    <button class="active">1</button>
+                    <button disabled><i class="fas fa-angle-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'managers/js/support_requests.js' %}"></script>
+{% endblock %}
