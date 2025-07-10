@@ -25,6 +25,7 @@
     <a href="?status=approved" class="filter-btn {% if status_filter == 'approved' %}active{% endif %}">Approved</a>
     <a href="?status=in_progress" class="filter-btn {% if status_filter == 'in_progress' %}active{% endif %}">In Progress</a>
     <a href="?status=completed" class="filter-btn {% if status_filter == 'completed' %}active{% endif %}">Completed</a>
+    <a href="?status=denied" class="filter-btn {% if status_filter == 'denied' %}active{% endif %}">Denied</a>
   </div>
 
   <form method="GET" class="filter-form">
@@ -65,18 +66,20 @@
                 <ul>
                   {% for issue in request.issues.all %}
                     <li>
-                      <strong>{{ issue.title }}</strong> - {{ issue.priority|capfirst }} ({{ issue.estimated_cost }} Ksh)
+                      <strong>{{ issue.title }}</strong> - {{ issue.priority|capfirst }} ({{ issue.cost_estimate }} Ksh)
                       {% if issue.description %}<br><small>{{ issue.description }}</small>{% endif %}
                     </li>
                   {% endfor %}
                 </ul>
               </div>
             </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Description</div>
-              <div class="detail-value">{{ request.description }}</div>
-            </div>
+
+            {% if request.status == "denied" %}
+              <div class="detail-item">
+                <div class="detail-label">Denial Reason</div>
+                <div class="detail-value">{{ request.last_update|default:"N/A" }}</div>
+              </div>
+            {% endif %}
 
             {% if request.status == "in_progress" %}
               <div class="detail-item">

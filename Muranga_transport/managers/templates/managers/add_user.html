@@ -1,0 +1,41 @@
+{% extends "managers/base.html" %}
+{% load static %}
+{% block title %}Add New User{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto p-6 bg-white shadow">
+  <h1 class="text-2xl font-bold mb-4">Add New User</h1>
+
+  <form method="post">{% csrf_token %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <select name="role" class="select select-bordered" required>
+        <option value="">Select Role</option>
+        <option value="driver">Driver</option>
+        <option value="mechanic">Mechanic</option>
+      </select>
+      <input type="text" name="firstName" placeholder="First Name" required class="input input-bordered">
+      <input type="text" name="lastName" placeholder="Last Name" required class="input input-bordered">
+      <input type="email" name="email" placeholder="Email" required class="input input-bordered">
+      <input type="text" name="phone" placeholder="Phone Number" required class="input input-bordered">
+      <input type="text" name="idNumber" placeholder="ID Number" required class="input input-bordered">
+      <input type="text" name="location" placeholder="Location" class="input input-bordered">
+      <input type="number" name="experienceYears" placeholder="Experience Years" required class="input input-bordered">
+      <input type="password" name="password" placeholder="Password" required class="input input-bordered">
+      <input type="password" name="confirmPassword" placeholder="Confirm Password" required class="input input-bordered">
+
+      <!-- DRIVER -->
+      <input type="text" name="driversLicense" placeholder="Driver's License No." class="input input-bordered">
+      <input type="text" name="licenseClass" placeholder="License Class" class="input input-bordered">
+      <input type="text" name="department" placeholder="Department (Drivers)" class="input input-bordered">
+      <input type="text" name="supervisor" placeholder="Supervisor (Drivers)" class="input input-bordered">
+
+      <!-- MECHANIC -->
+      <input type="text" name="specialization" placeholder="Specialization (Mechanics)" class="input input-bordered">
+    </div>
+
+    <div class="mt-6 flex justify-end">
+      <button type="submit" class="btn btn-primary">Create User</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

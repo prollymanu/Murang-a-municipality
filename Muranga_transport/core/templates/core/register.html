@@ -1,113 +1,152 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Murang'a County - Sign Up</title>
+  <title>Sign Up - Murang'a</title>
   <link rel="stylesheet" href="{% static 'core/css/register.css' %}">
+  <style>
+    .hidden { display: none; }
+    .messages li { margin-bottom: 8px; }
+    .error { color: red; }
+    .success { color: green; }
+    .login-redirect {
+      margin-top: 12px;
+      text-align: center;
+    }
+    .login-redirect a {
+      text-decoration: underline;
+      color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-  <div class="decor-leaf top-left"></div>
-  <div class="decor-leaf bottom-right"></div>
-
   <div class="container">
-    <div class="logo-container">
-      <img src="{% static 'core/images/murangalogo.png' %}" alt="Murang'a County Logo" class="logo">
-    </div>
-
-    <h1>Create Your Account</h1>
+    <h1>Create an Account</h1>
 
     {% if messages %}
       <ul class="messages">
         {% for message in messages %}
-          <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
+          <li class="{{ message.tags }}">{{ message }}</li>
         {% endfor %}
       </ul>
     {% endif %}
-    {% if error %}<div class="error-message">{{ error }}</div>{% endif %}
-    {% if success %}<div class="success-message">{{ success }}</div>{% endif %}
 
-    <form id="signupForm" class="signup-form" method="post" action="{% url 'core:register' %}">
+    <form method="post" action="{% url 'core:register' %}">
       {% csrf_token %}
 
-      <div class="role-selector">
-        <label for="role">I am a:</label>
-        <select id="role" name="role" required>
-          <option value="" disabled selected>Select your role</option>
+      <!-- Common Fields -->
+      <label>Role:
+        <select name="role" id="role" required>
+          <option value="">-- Select Role --</option>
           <option value="driver">Driver</option>
           <option value="mechanic">Mechanic</option>
         </select>
+      </label><br>
+
+      <label>Full Name:
+        <input type="text" name="fullName" required>
+      </label><br>
+
+      <label>Email:
+        <input type="email" name="email" required>
+      </label><br>
+
+      <label>Phone Number:
+        <input type="text" name="phone" required>
+      </label><br>
+
+      <label>Years of Experience:
+        <input type="number" name="experienceYears" min="0" required>
+      </label><br>
+
+      <!-- Driver Only -->
+      <div id="driverFields" class="hidden">
+        <label>License Number:
+          <input type="text" name="license">
+        </label><br>
+
+        <label>License Class:
+          <select name="licenseClass">
+            <option value="">-- Select --</option>
+            <option value="B">B</option>
+            <option value="BCE">BCE</option>
+            <option value="CDE">CDE</option>
+          </select>
+        </label><br>
+
+        <label>Department:
+          <input type="text" name="department">
+        </label><br>
+
+        <label>Supervisor:
+          <input type="text" name="supervisor">
+        </label><br>
       </div>
 
-      <!-- Common Fields -->
-      <div class="form-group">
-        <label for="fullName">Full Names:</label>
-        <input type="text" id="fullName" name="fullName" required placeholder="Enter your full name">
+      <!-- Mechanic Only -->
+      <div id="mechanicFields" class="hidden">
+        <label>ID Number:
+          <input type="text" name="idNumber">
+        </label><br>
+
+        <label>Location:
+          <input type="text" name="location">
+        </label><br>
+
+        <label>Specialization:
+          <input type="text" name="specialization">
+        </label><br>
       </div>
 
-      <div class="form-group">
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required placeholder="Enter your email">
-      </div>
+      <!-- Passwords -->
+      <label>Password:
+        <input type="password" name="password" required>
+      </label><br>
 
-      <div class="form-group">
-        <label for="phone">Phone Number:</label>
-        <input type="tel" id="phone" name="phone" required placeholder="Enter phone number">
-      </div>
+      <label>Confirm Password:
+        <input type="password" name="confirmPassword" required>
+      </label><br>
 
-      <!-- Driver Fields -->
-      <div id="driverFields" class="role-fields" style="display: none;">
-        <div class="form-group">
-          <label for="license">Driver's License Number:</label>
-          <input type="text" id="license" name="license" placeholder="Enter license number">
-        </div>
-        <div class="form-group">
-          <label for="idNumber">ID Number:</label>
-          <input type="text" id="idNumber" name="idNumber" placeholder="Enter national ID">
-        </div>
-        <div class="form-group">
-          <label for="location">Location:</label>
-          <input type="text" id="location" name="location" placeholder="Enter location">
-        </div>
-      </div>
+      <label>
+        <input type="checkbox" name="terms" required>
+        I agree to the terms and conditions
+      </label><br>
 
-      <!-- Mechanic Fields -->
-      <div id="mechanicFields" class="role-fields" style="display: none;">
-        <div class="form-group">
-          <label for="idNumberMech">ID Number:</label>
-          <input type="text" id="idNumberMech" name="idNumber" placeholder="Enter national ID">
-        </div>
-        <div class="form-group">
-          <label for="locationMech">Garage Location:</label>
-          <input type="text" id="locationMech" name="location" placeholder="Enter garage location">
-        </div>
-      </div>
+      <button type="submit">Register</button>
 
-      <!-- Common Password Fields -->
-      <div class="form-group">
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" placeholder="Create password">
-        <!-- eye icon will be auto-added by JS -->
+      <!--  Already have an account -->
+      <div class="login-redirect">
+        Already have an account?
+        <a href="{% url 'core:login' %}">Log in</a>
       </div>
-      <div class="form-group">
-        <label for="confirmPassword">Confirm Password:</label>
-        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm password">
-        <!-- eye icon will be auto-added by JS -->
-      </div>
-
-      <div class="terms-checkbox">
-        <input type="checkbox" id="terms" name="terms" required>
-        <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
-      </div>
-
-      <button type="submit" class="btn">Sign Up</button>
-
-      <p class="signup-link">Already have an account? <a href="{% url 'core:login' %}">Log in</a></p>
     </form>
   </div>
 
+  <!-- Role toggle script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const roleSelect = document.getElementById('role');
+      const driverFields = document.getElementById('driverFields');
+      const mechanicFields = document.getElementById('mechanicFields');
+
+      roleSelect.addEventListener('change', function () {
+        driverFields.classList.add('hidden');
+        mechanicFields.classList.add('hidden');
+
+        if (this.value === 'driver') {
+          driverFields.classList.remove('hidden');
+        } else if (this.value === 'mechanic') {
+          mechanicFields.classList.remove('hidden');
+        }
+      });
+    });
+  </script>
+
+  <!--JS path -->
   <script src="{% static 'core/js/register.js' %}"></script>
 </body>
 </html>
+
+

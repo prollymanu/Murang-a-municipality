@@ -5,9 +5,11 @@ from django.contrib import messages
 
 from .models import DriverProfile
 from .models import MaintenanceRequest, RequestIssue, Vehicle
+from django.http import HttpResponseForbidden
 
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.core.exceptions import ValidationError
 
 from .models import SupportRequest
 
@@ -67,20 +69,28 @@ def profile_edit(request):
     try:
         driver = user.driverprofile
     except DriverProfile.DoesNotExist:
-        driver = None
+        return HttpResponseForbidden("You are not authorized to access this page.")
 
     if request.method == 'POST':
+        if driver:
+            # Handle profile image upload separately
+            if 'profile_image' in request.FILES:
+                driver.profile_image = request.FILES['profile_image']
+                driver.save()
+                messages.success(request, "Profile picture updated successfully!")
+                return redirect('drivers:profile')
+
+        # Handle full profile update
         full_name = request.POST.get('full_name')
         phone_number = request.POST.get('phone_number')
         email = request.POST.get('email')
-        license_class_list = request.POST.getlist('license_class')  # multi select
+        license_class_list = request.POST.getlist('license_class')
         license_class = ','.join(license_class_list)
         experience = request.POST.get('experience')
         department = request.POST.get('department')
         supervisor = request.POST.get('supervisor')
         current_vehicle = request.POST.get('current_vehicle')
 
-        # Update user
         user.first_name = full_name.split(' ')[0]
         user.last_name = ' '.join(full_name.split(' ')[1:]) if len(full_name.split(' ')) > 1 else ''
         user.email = email
@@ -93,24 +103,32 @@ def profile_edit(request):
             driver.department = department
             driver.supervisor = supervisor
             driver.current_vehicle = current_vehicle
-
-            if 'profile_image' in request.FILES:
-                driver.profile_image = request.FILES['profile_image']
-
             driver.save()
 
         messages.success(request, "Profile updated successfully!")
         return redirect('drivers:profile')
 
-   
-    license_class_list = driver.license_class.split(',') if driver and driver.license_class else []
+    license_class_list = []
+    if driver and driver.license_class:
+        license_class_list = driver.license_class.split(',')
 
-    context = {
+    license_options = [
+        ('A', 'A - Motorcycle'),
+        ('B', 'B - Personal Vehicle'),
+        ('C', 'C - Light Commercial'),
+        ('D', 'D - Heavy Commercial'),
+        ('E', 'E - Heavy Articulated'),
+        ('F', 'F - Construction Equipment'),
+        ('G', 'G - Agricultural Tractor'),
+    ]
+
+    return render(request, 'drivers/profile_edit.html', {
         "name": user.get_full_name() or user.username,
         "driver": driver,
         "license_class_list": license_class_list,
-    }
-    return render(request, 'drivers/profile_edit.html', context)
+        "license_options": license_options,
+    })
+
 
 def maintenance(request):
     user = request.user
