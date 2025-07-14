@@ -104,8 +104,16 @@
               <button type="submit" class="btn btn-primary btn-small"><i class="fas fa-check"></i> Approve</button>
             </form>
             <button class="btn btn-outline btn-small" onclick="openDenyModal()">Deny</button>
-          {% elif request_obj.status == 'approved' and not request_obj.assigned_task %}
-            <a href="{% url 'managers:assign_mechanic' request_obj.id %}" class="btn btn-primary btn-small"><i class="fas fa-user-cog"></i> Assign Mechanic</a>
+          {% elif request_obj.status == 'approved' %}
+            {% if can_unapprove %}
+              <form action="{% url 'managers:unapprove_request' request_obj.id %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-small"><i class="fas fa-undo-alt"></i> Unapprove</button>
+              </form>
+            {% endif %}
+            {% if not request_obj.mechanic %}
+              <a href="{% url 'managers:assign_mechanic' request_obj.id %}" class="btn btn-primary btn-small"><i class="fas fa-user-cog"></i> Assign Mechanic</a>
+            {% endif %}
           {% endif %}
         </div>
       </div>

@@ -3,21 +3,32 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Sum
 from drivers.models import MaintenanceRequest, RequestIssue, Vehicle, DriverProfile
 from mechanics.models import MechanicProfile, MechanicTask
 from core.models import User, RegistrationRequest
 from django.views.decorators.http import require_POST
 from django.contrib.auth.hashers import make_password
+from datetime import timedelta
+from django.forms import modelformset_factory
 import random
 import string
 import uuid
 import re
-
+import io
+import csv
+import datetime
 from core.models import User
 from core.utils import generate_unique_id, get_greeting
 from drivers.models import DriverProfile
 from mechanics.models import MechanicProfile
+from mechanics.models import RepairInvoice
+from .forms import InvoiceStatusForm, InvoiceApprovalForm, InvoiceRejectionForm
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+import openpyxl
+from openpyxl import Workbook
+from reportlab.lib.pagesizes import A4
 
 def generate_unique_id(prefix, length=8):
     chars = string.ascii_uppercase + string.digits
@@ -80,22 +91,91 @@ def maintenance(request):
 
 @login_required
 def request_detail(request, id):
-    req = get_object_or_404(MaintenanceRequest, id=id)
+    request_obj = get_object_or_404(MaintenanceRequest, pk=id)
+    can_unapprove = False
+
+    if request_obj.status == 'approved' and request_obj.approved_at:
+        time_diff = timezone.now() - request_obj.approved_at
+        can_unapprove = time_diff <= timedelta(hours=24)
+
     return render(request, 'managers/request_detail.html', {
-        "greeting": get_greeting(),
-        "name": request.user.get_full_name() or request.user.username,
-        "request_obj": req
+        'request_obj': request_obj,
+        'can_unapprove': can_unapprove,
+        'name': request.user.get_full_name(),
+        'greeting': get_greeting(),
     })
 
 @login_required
 def approve_request(request, id):
     req = get_object_or_404(MaintenanceRequest, id=id)
+    priority_choices = MaintenanceRequest.PRIORITY_CHOICES
+
     if request.method == 'POST':
+        for issue in req.issues.all():
+            cost_field = f'revised_cost_{issue.id}'
+            priority_field = f'priority_{issue.id}'
+
+            revised_cost = request.POST.get(cost_field)
+            new_priority = request.POST.get(priority_field)
+
+            # Validate and update cost
+            if revised_cost:
+                try:
+                    issue.cost_estimate = float(revised_cost)
+                except ValueError:
+                    messages.error(request, f"Invalid cost entered for issue '{issue.title}'.")
+                    return redirect('managers:approve_request', id=id)
+
+            # Validate and update priority
+            if new_priority and new_priority in dict(priority_choices):
+                issue.priority = new_priority
+
+            issue.save()
+
+        # Save comment and status update
+        comment = request.POST.get('comment', '').strip()
+        timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
+
+        if comment:
+            req.last_update = f"{request.user.get_full_name()} (Manager) on {timestamp}: {comment}"
+        else:
+            req.last_update = f"Approved by {request.user.get_full_name()} on {timestamp}"
+
         req.status = 'approved'
         req.approved_by = request.user
-        req.last_update = f"Approved by {request.user.get_full_name()} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+        req.approved_at = timezone.now()
         req.save()
-        messages.success(request, f"Request #{id} approved.")
+
+        messages.success(request, f"Request #{req.id} has been approved.")
+        return redirect('managers:maintenance')
+
+    # For GET request — show approval page
+    can_unapprove = False
+    if req.status == 'approved' and req.approved_at:
+        delta = timezone.now() - req.approved_at
+        can_unapprove = delta <= timedelta(hours=24)
+
+    return render(request, 'managers/approve_request.html', {
+        'request_obj': req,
+        'priority_choices': priority_choices,
+        'can_unapprove': can_unapprove,
+    })
+
+
+@login_required
+def unapprove_request(request, id):
+    req = get_object_or_404(MaintenanceRequest, id=id)
+    if req.status != 'approved':
+        messages.error(request, "Only approved requests can be unapproved.")
+    elif not req.approved_at or timezone.now() > req.approved_at + timedelta(hours=24):
+        messages.error(request, "You can only unapprove within 24 hours.")
+    else:
+        req.status = 'pending'
+        req.approved_by = None
+        req.approved_at = None
+        req.last_update = f"Unapproved by {request.user.get_full_name()} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+        req.save()
+        messages.success(request, f"Request #{id} unapproved successfully.")
     return redirect('managers:maintenance')
 
 @login_required
@@ -436,8 +516,258 @@ def jobs(request):
     return render(request, 'managers/job_management.html')
 
 @login_required
-def invoices(request):
-    return render(request, 'managers/repair_invoices.html')
+def repair_invoices(request):
+    invoices = RepairInvoice.objects.select_related('mechanic_task__mechanic').all()
+
+    # --- Filters ---
+    status = request.GET.get('status')
+    mechanic_id = request.GET.get('mechanic')
+    search_query = request.GET.get('search')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    if status and status != 'all':
+        invoices = invoices.filter(status__iexact=status)
+
+    if mechanic_id and mechanic_id != 'all':
+        invoices = invoices.filter(mechanic_task__mechanic__id=mechanic_id)
+
+    if search_query:
+        invoices = invoices.filter(
+            Q(task_unique_id__icontains=search_query) |
+            Q(issues__icontains=search_query) |
+            Q(vehicle_number__icontains=search_query)
+        )
+
+    if start_date:
+        invoices = invoices.filter(date_of_service__gte=start_date)
+    if end_date:
+        invoices = invoices.filter(date_of_service__lte=end_date)
+
+    paginator = Paginator(invoices.order_by('-date_of_service'), 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # --- Summary ---
+    total_paid = RepairInvoice.objects.filter(status='paid').aggregate(Sum('total_cost'))['total_cost__sum'] or 0
+    pending_approval = RepairInvoice.objects.filter(status='pending').aggregate(Sum('total_cost'))['total_cost__sum'] or 0
+    rejected_invoices = RepairInvoice.objects.filter(status='rejected').aggregate(Sum('total_cost'))['total_cost__sum'] or 0
+
+    pending_count = RepairInvoice.objects.filter(status='pending').count()
+    rejected_count = RepairInvoice.objects.filter(status='rejected').count()
+    mechanics = MechanicProfile.objects.filter(status='active').order_by('full_name')
+
+    context = {
+        'invoices': page_obj,
+        'page_obj': page_obj,
+        'mechanics': mechanics,
+        'total_paid': total_paid,
+        'pending_approval': pending_approval,
+        'rejected_invoices': rejected_invoices,
+        'pending_count': pending_count,
+        'rejected_count': rejected_count,
+        'status_choices': RepairInvoice.STATUS_CHOICES,
+    }
+    return render(request, 'managers/repair_invoices.html', context)
+
+
+@login_required
+def approve_invoice(request, invoice_id):
+    invoice = get_object_or_404(RepairInvoice, pk=invoice_id)
+    if request.method == 'POST':
+        form = InvoiceApprovalForm(request.POST)
+        if form.is_valid():
+            invoice.status = 'approved'
+            invoice.action_timestamp = timezone.now()
+            invoice.rejected_by = None
+            invoice.rejection_reason = ''
+            invoice.rejection_comment = ''
+            invoice.save()
+            messages.success(request, f"Invoice #{invoice.task_unique_id} approved.")
+            return redirect('managers:repair_invoices')
+    else:
+        form = InvoiceApprovalForm()
+    return render(request, 'managers/approve_invoice.html', {'invoice': invoice, 'form': form})
+
+
+@login_required
+def reject_invoice(request, invoice_id):
+    invoice = get_object_or_404(RepairInvoice, pk=invoice_id)
+    if request.method == 'POST':
+        form = InvoiceRejectionForm(request.POST)
+        if form.is_valid():
+            invoice.status = 'rejected'
+            invoice.rejected_by = request.user
+            invoice.rejection_reason = form.cleaned_data['reason']
+            invoice.rejection_comment = form.cleaned_data['notes']
+            invoice.action_timestamp = timezone.now()
+            invoice.save()
+            messages.warning(request, f"Invoice #{invoice.task_unique_id} rejected.")
+            return redirect('managers:repair_invoices')
+    else:
+        form = InvoiceRejectionForm()
+    return render(request, 'managers/reject_invoice.html', {'invoice': invoice, 'form': form})
+
+
+@login_required
+def unapprove_invoice(request, invoice_id):
+    invoice = get_object_or_404(RepairInvoice, pk=invoice_id)
+    if invoice.status != 'approved':
+        messages.error(request, "Invoice is not approved.")
+    elif timezone.now() - invoice.action_timestamp > timedelta(hours=48):
+        messages.error(request, "Unapproval window expired (48 hours).")
+    else:
+        invoice.status = 'pending'
+        invoice.action_timestamp = timezone.now()
+        invoice.save()
+        messages.success(request, f"Invoice #{invoice.task_unique_id} moved back to Pending.")
+    return redirect('managers:repair_invoices')
+
+
+@login_required
+def unreject_invoice(request, invoice_id):
+    invoice = get_object_or_404(RepairInvoice, pk=invoice_id)
+    if invoice.status != 'rejected':
+        messages.error(request, "Invoice is not rejected.")
+    elif timezone.now() - invoice.action_timestamp > timedelta(hours=48):
+        messages.error(request, "Unrejection window expired (48 hours).")
+    else:
+        invoice.status = 'pending'
+        invoice.rejected_by = None
+        invoice.rejection_reason = ''
+        invoice.rejection_comment = ''
+        invoice.action_timestamp = timezone.now()
+        invoice.save()
+        messages.success(request, f"Invoice #{invoice.task_unique_id} moved back to Pending.")
+    return redirect('managers:repair_invoices')
+
+
+
+def export_excel(invoices):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Repair Invoices"
+
+    headers = ['Invoice #', 'Date of Service', 'Vehicle', 'Mechanic', 'Issues', 'Total Cost', 'Status']
+    ws.append(headers)
+
+    for inv in invoices:
+        ws.append([
+            inv.task_unique_id,
+            inv.date_of_service.strftime('%Y-%m-%d'),
+            inv.vehicle_number,
+            inv.mechanic_task.mechanic_profile.full_name if inv.mechanic_task and inv.mechanic_task.mechanic_profile else '',
+            inv.issues,
+            float(inv.total_cost),
+            inv.get_status_display(),
+        ])
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    filename = f"repair_invoices_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx"
+    response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+def export_pdf(invoices):
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    y = height - 40
+
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(200, y, "Repair Invoices Report")
+    y -= 30
+
+    p.setFont("Helvetica", 10)
+    headers = ['Invoice #', 'Date', 'Vehicle', 'Mechanic', 'Issues', 'Amount', 'Status']
+    col_widths = [60, 60, 60, 80, 100, 50, 50]
+
+    for i, header in enumerate(headers):
+        p.drawString(30 + sum(col_widths[:i]), y, header)
+    y -= 20
+
+    for inv in invoices:
+        row = [
+            inv.task_unique_id,
+            inv.date_of_service.strftime('%Y-%m-%d'),
+            inv.vehicle_number,
+            inv.mechanic_task.mechanic_profile.full_name if inv.mechanic_task and inv.mechanic_task.mechanic_profile else '',
+            (inv.issues or '')[:30],
+            f"{inv.total_cost:.2f}",
+            inv.get_status_display(),
+        ]
+        for i, item in enumerate(row):
+            p.drawString(30 + sum(col_widths[:i]), y, str(item))
+        y -= 20
+        if y < 50:
+            p.showPage()
+            p.setFont("Helvetica", 10)
+            y = height - 40
+
+    p.save()
+    buffer.seek(0)
+
+    filename = f"repair_invoices_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+def export_invoices(request, format):
+    # Get filtered queryset same way as repair_invoices view
+    invoices = RepairInvoice.objects.select_related('mechanic_task__mechanic_profile').all()
+
+    status = request.GET.get('status')
+    mechanic_id = request.GET.get('mechanic')
+    search_query = request.GET.get('search')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    if status and status != 'all':
+        invoices = invoices.filter(status__iexact=status)
+    if mechanic_id and mechanic_id != 'all':
+        invoices = invoices.filter(mechanic_task__mechanic_profile__id=mechanic_id)
+    if search_query:
+        invoices = invoices.filter(
+            Q(task_unique_id__icontains=search_query) |
+            Q(issues__icontains=search_query) |
+            Q(vehicle_number__icontains=search_query)
+        )
+    if start_date:
+        invoices = invoices.filter(date_of_service__gte=start_date)
+    if end_date:
+        invoices = invoices.filter(date_of_service__lte=end_date)
+
+    if format == 'excel':
+        return export_excel(invoices)
+    elif format == 'pdf':
+        return export_pdf(invoices)
+    else:
+        return HttpResponse("Invalid export format", status=400)
+
+def export_invoices_pdf(request):
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="repair_invoices.pdf"'
+
+    p = canvas.Canvas(response)
+    invoices = RepairInvoice.objects.all()
+
+    y = 800
+    p.drawString(100, y, "Repair Invoices Report")
+    y -= 30
+    for invoice in invoices:
+        line = f"#{invoice.invoice_number} - {invoice.mechanic} - Ksh {invoice.amount} - {invoice.status}"
+        p.drawString(100, y, line)
+        y -= 20
+        if y < 50:
+            p.showPage()
+            y = 800
+
+    p.showPage()
+    p.save()
+    return response
 
 @login_required
 def reports(request):

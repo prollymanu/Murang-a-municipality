@@ -1,0 +1,150 @@
+{% extends "managers/base.html" %}
+{% load static %}
+{% block title %}Repair Invoices | Municipality Transport{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'managers/css/repair_invoices.css' %}">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <header class="top-nav">
+        <div class="nav-right">
+            <span class="user-greeting">Welcome, {{ user.get_full_name|default:"Transport Manager" }}</span>
+            <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+        </div>
+    </header>
+
+    <div class="page-content">
+        <div class="page-header">
+            <h1 class="page-title"><i class="fas fa-file-invoice-dollar"></i> Repair Invoices</h1>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="exportBtn"><i class="fas fa-file-export"></i> Export</button>
+            </div>
+        </div>
+
+        <div class="export-options" id="exportOptions">
+            <a href="{% url 'managers:export_invoices' 'pdf' %}?{{ request.GET.urlencode }}" class="btn-export"><i class="fas fa-file-pdf"></i> Export as PDF</a>
+            <a href="{% url 'managers:export_invoices' 'excel' %}?{{ request.GET.urlencode }}" class="btn-export"><i class="fas fa-file-excel"></i> Export as Excel</a>
+        </div>
+
+        <form method="get">
+            <div class="invoice-filters">
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select name="status" onchange="this.form.submit()">
+                        <option value="all">All Statuses</option>
+                        {% for key, val in status_choices %}
+                        <option value="{{ key }}" {% if request.GET.status == key %}selected{% endif %}>{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Mechanic</label>
+                    <select name="mechanic" onchange="this.form.submit()">
+                        <option value="all">All Mechanics</option>
+                        {% for mech in mechanics %}
+                        <option value="{{ mech.id }}" {% if request.GET.mechanic == mech.id|stringformat:"s" %}selected{% endif %}>{{ mech.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Date Range</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="date" name="start_date" value="{{ request.GET.start_date }}" onchange="this.form.submit()">
+                        <input type="date" name="end_date" value="{{ request.GET.end_date }}" onchange="this.form.submit()">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label>Search</label>
+                    <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Search invoices..." onchange="this.form.submit()">
+                </div>
+            </div>
+        </form>
+
+        <div class="summary-cards">
+            <div class="summary-card total-paid">
+                <h3>Total Paid</h3>
+                <p class="amount">Ksh {{ total_paid|floatformat:2 }}</p>
+                <small>Last 30 days</small>
+            </div>
+            <div class="summary-card pending-approval">
+                <h3>Pending Approval</h3>
+                <p class="amount">Ksh {{ pending_approval|floatformat:2 }}</p>
+                <small>{{ pending_count }} invoices</small>
+            </div>
+            <div class="summary-card rejected-invoices">
+                <h3>Rejected Invoices</h3>
+                <p class="amount">Ksh {{ rejected_invoices|floatformat:2 }}</p>
+                <small>{{ rejected_count }} invoices</small>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Date</th>
+                        <th>Issues</th>
+                        <th>Vehicle</th>
+                        <th>Mechanic</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in invoices %}
+                    <tr>
+                        <td>{{ inv.task_unique_id }}</td>
+                        <td>{{ inv.date_of_service|date:"d M Y" }}</td>
+                        <td>{{ inv.issues }}</td>
+                        <td>{{ inv.vehicle_number }}</td>
+                        <td>{{ inv.mechanic_task.mechanic_profile.full_name }}</td>
+                        <td class="amount-positive">Ksh {{ inv.total_cost|floatformat:2 }}</td>
+                        <td><span class="invoice-status status-{{ inv.status|lower }}">{{ inv.get_status_display }}</span></td>
+                        <td>
+                            {% if inv.status == 'pending' %}
+                                <a href="{% url 'managers:approve_invoice' inv.id %}" class="btn-approve">Approve</a>
+                                <a href="{% url 'managers:reject_invoice' inv.id %}" class="btn-reject">Reject</a>
+                            {% else %}
+                                <a href="{{ inv.get_pdf_url }}" class="btn-download"><i class="fas fa-download"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8">No invoices found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <div>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries</div>
+            <div class="page-controls">
+                {% if page_obj.has_previous %}
+                    <a href="?{% querystring page=page_obj.previous_page_number %}" class="btn-outline"><i class="fas fa-chevron-left"></i></a>
+                {% else %}
+                    <span class="btn-outline disabled"><i class="fas fa-chevron-left"></i></span>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                    <a href="?{% querystring page=num %}" class="btn-outline {% if num == page_obj.number %}active{% endif %}">{{ num }}</a>
+                {% endfor %}
+                {% if page_obj.has_next %}
+                    <a href="?{% querystring page=page_obj.next_page_number %}" class="btn-outline"><i class="fas fa-chevron-right"></i></a>
+                {% else %}
+                    <span class="btn-outline disabled"><i class="fas fa-chevron-right"></i></span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'managers/js/repair_invoices.js' %}"></script>
+{% endblock %}

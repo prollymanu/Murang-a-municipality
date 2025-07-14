@@ -102,6 +102,8 @@ class MaintenanceRequest(models.Model):
         MechanicProfile, null=True, blank=True, on_delete=models.SET_NULL, related_name='assigned_requests')
     estimated_completion = models.DateField(null=True, blank=True)
     last_update = models.TextField(blank=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+
 
     def __str__(self):
         return f"Request #{self.pk} - {self.vehicle.number_plate} - {self.status}"

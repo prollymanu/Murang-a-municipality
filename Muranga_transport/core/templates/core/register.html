@@ -124,26 +124,6 @@
     </form>
   </div>
 
-  <!-- Role toggle script -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const roleSelect = document.getElementById('role');
-      const driverFields = document.getElementById('driverFields');
-      const mechanicFields = document.getElementById('mechanicFields');
-
-      roleSelect.addEventListener('change', function () {
-        driverFields.classList.add('hidden');
-        mechanicFields.classList.add('hidden');
-
-        if (this.value === 'driver') {
-          driverFields.classList.remove('hidden');
-        } else if (this.value === 'mechanic') {
-          mechanicFields.classList.remove('hidden');
-        }
-      });
-    });
-  </script>
-
   <!--JS path -->
   <script src="{% static 'core/js/register.js' %}"></script>
 </body>

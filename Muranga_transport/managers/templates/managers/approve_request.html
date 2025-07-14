@@ -1,0 +1,58 @@
+{% extends "managers/base.html" %}
+{% load static %}
+
+{% block title %}Approve Maintenance Request #{{ request_obj.id }}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'managers/css/approve_request.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+  <h1 class="page-title">Approve Maintenance Request #{{ request_obj.id }}</h1>
+
+  <form method="post" action="">
+    {% csrf_token %}
+
+    {% for issue in request_obj.issues.all %}
+      <div class="issue-card">
+        <div class="issue-header">
+          <h3>{{ issue.title }}</h3>
+        </div>
+
+        <div class="issue-body">
+          <p><strong>Original Cost:</strong> Ksh {{ issue.cost_estimate }}</p>
+
+          <label for="revised_cost_{{ issue.id }}">Revised Cost:</label>
+          <input type="number" step="0.01" name="revised_cost_{{ issue.id }}" id="revised_cost_{{ issue.id }}"
+                 data-original="{{ issue.cost_estimate }}" class="revised-cost-input">
+
+          <p class="cost-diff" id="cost_diff_{{ issue.id }}"></p>
+
+          <label for="priority_{{ issue.id }}">Priority:</label>
+          <select name="priority_{{ issue.id }}" id="priority_{{ issue.id }}">
+            {% for value, label in priority_choices %}
+              <option value="{{ value }}" {% if issue.priority == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+
+          <p><strong>Description:</strong> {{ issue.description }}</p>
+        </div>
+      </div>
+    {% endfor %}
+
+    <div class="form-group">
+      <label for="comment">Comment (optional):</label>
+      <textarea name="comment" id="comment" rows="4" placeholder="Add an update or comment..."></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Approve Request</button>
+    <a href="{% url 'managers:request_detail' request_obj.id %}" class="btn btn-outline">Cancel</a>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'managers/js/approve_request.js' %}"></script>
+{% endblock %}
+

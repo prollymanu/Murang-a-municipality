@@ -106,6 +106,16 @@
             <a href="{% url 'drivers:request_detail' request.id %}" class="btn btn-outline">
               <i class="fas fa-eye"></i> View Details
             </a>
+            {% if request.status == 'approved' %}
+              {% if request.approved_at and request.approved_at|timesince:"now" < "1 day" %}
+                <form method="POST" action="{% url 'managers:unapprove_request' request.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-undo"></i> Unapprove
+                  </button>
+                </form>
+              {% endif %}
+            {% endif %}
           </div>
         </div>
       {% endfor %}

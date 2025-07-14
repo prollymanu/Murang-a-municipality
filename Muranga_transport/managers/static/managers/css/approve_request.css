@@ -1,0 +1,171 @@
+.approve-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-family: 'Poppins', sans-serif;
+}
+
+.approve-container h1 {
+  margin-bottom: 24px;
+  font-size: 1.8rem;
+  color: #333;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.field p {
+  margin: 0;
+  color: #444;
+}
+
+/* Issue Card Styles */
+.issue-card {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.3s;
+}
+
+.issue-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.issue-header h3 {
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+.issue-body label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 500;
+}
+
+/* Shared Form Element Styles */
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  margin-top: 4px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.cost-diff {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 5px;
+}
+
+/* Button Styles */
+.btn {
+  padding: 10px 18px;
+  margin-top: 20px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: #fff;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}
+
+.btn-outline {
+  background: none;
+  border: 1px solid #ccc;
+  color: #333;
+  margin-left: 10px;
+}
+
+.btn-outline:hover {
+  background: #f8f8f8;
+}
+
+.actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.actions .btn-approve {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.actions .btn-unapprove {
+  background: #ffc107;
+  color: black;
+  padding: 10px 20px;
+  text-decoration: none;
+  border: none;
+}
+
+.actions .btn-back {
+  background: #ccc;
+  padding: 10px 20px;
+  text-decoration: none;
+  color: black;
+  border: none;
+}
+
+.btn-approve:hover {
+  background: #218838;
+}
+
+.btn-unapprove:hover {
+  background: #e0a800;
+}
+
+/* Responsive Styles */
+@media screen and (max-width: 600px) {
+  .approve-container {
+    margin: 20px;
+    padding: 15px;
+  }
+
+  .issue-card {
+    padding: 15px;
+  }
+
+  .btn,
+  .actions {
+    width: 100%;
+    margin-top: 15px;
+    flex-direction: column;
+  }
+
+  .btn-outline {
+    margin-left: 0;
+    margin-top: 10px;
+  }
+}

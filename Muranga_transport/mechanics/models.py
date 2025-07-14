@@ -2,6 +2,8 @@ import string
 from django.db import models
 from django.conf import settings
 from django.utils.crypto import get_random_string
+from django.utils import timezone
+from datetime import timedelta
 
 def generate_mechanic_id():
     prefix = "ME"
@@ -87,7 +89,9 @@ class MechanicTask(models.Model):
 class RepairInvoice(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
+        ('approved', 'Approved'),
         ('paid', 'Paid'),
+        ('rejected', 'Rejected'),
     ]
 
     mechanic_task = models.OneToOneField(
@@ -102,9 +106,17 @@ class RepairInvoice(models.Model):
     date_of_service = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    rejected_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='rejected_invoices'
+    )
+    rejection_reason = models.CharField(max_length=50, blank=True)
+    rejection_comment = models.TextField(blank=True)
+    action_timestamp = models.DateTimeField(auto_now_add=True)
+   
 
-    def __str__(self):
-        return f"Invoice {self.task_unique_id} for {self.vehicle_number}"
+    @property
+    def can_unapprove(self):
+        return self.status in ('approved', 'rejected') and (timezone.now() - self.action_timestamp) <= timedelta(hours=48)
 
 class RepairInvoicePhoto(models.Model):
     invoice = models.ForeignKey(

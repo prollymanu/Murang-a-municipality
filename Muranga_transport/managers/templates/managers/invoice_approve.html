@@ -1,0 +1,13 @@
+{% extends "managers/base.html" %}
+{% block title %}Approve Invoice{% endblock %}
+{% block content %}
+<div class="form-container">
+    <h2>Approve Invoice #{{ invoice.task_unique_id }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">Approve</button>
+        <a href="{% url 'managers:repair_invoices' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
