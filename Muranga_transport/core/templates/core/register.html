@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sign Up - Murang'a</title>
   <link rel="stylesheet" href="{% static 'core/css/register.css' %}">
-  <link rel="icon" href="{% static 'core/images/favicon.ico' %}" type="image/x-icon">
   <style>
     .hidden { display: none; }
     .messages li { margin-bottom: 8px; }
@@ -166,114 +165,147 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      // Role-based field toggling
-      const roleSelect = document.getElementById('role');
-      const driverFields = document.getElementById('driverFields');
-      const mechanicFields = document.getElementById('mechanicFields');
-      const idNumberInput = document.getElementById('id_number');
-    
-      roleSelect.addEventListener('change', function () {
-        driverFields.classList.add('hidden');
-        mechanicFields.classList.add('hidden');
-    
-        if (this.value === 'driver') {
-          driverFields.classList.remove('hidden');
-          idNumberInput.required = false; // Remove required for drivers
-        } else if (this.value === 'mechanic') {
-          mechanicFields.classList.remove('hidden');
-          idNumberInput.required = true; // Add required for mechanics
-        } else {
-          idNumberInput.required = false;
+        // Role-based field toggling
+        const roleSelect = document.getElementById('role');
+        const driverFields = document.getElementById('driverFields');
+        const mechanicFields = document.getElementById('mechanicFields');
+        const idNumberInput = document.getElementById('id_number');
+        
+        // Phone number validation setup
+        const phoneInput = document.querySelector('input[name="phone_number"]');
+        
+        roleSelect.addEventListener('change', function () {
+            driverFields.classList.add('hidden');
+            mechanicFields.classList.add('hidden');
+        
+            if (this.value === 'driver') {
+                driverFields.classList.remove('hidden');
+                idNumberInput.required = false;
+            } else if (this.value === 'mechanic') {
+                mechanicFields.classList.remove('hidden');
+                idNumberInput.required = true;
+            } else {
+                idNumberInput.required = false;
+            }
+        });
+        
+        // Initialize fields based on any preselected role
+        if (roleSelect.value === 'driver') {
+            driverFields.classList.remove('hidden');
+            idNumberInput.required = false;
+        } else if (roleSelect.value === 'mechanic') {
+            mechanicFields.classList.remove('hidden');
+            idNumberInput.required = true;
         }
-      });
-    
-      // Initialize fields based on any preselected role
-      if (roleSelect.value === 'driver') {
-        driverFields.classList.remove('hidden');
-        idNumberInput.required = false;
-      } else if (roleSelect.value === 'mechanic') {
-        mechanicFields.classList.remove('hidden');
-        idNumberInput.required = true;
-      }
-    
-      // Password validation functionality
-      const pwd = document.getElementById('password');
-      const confirmPwd = document.getElementById('confirm_password');
-    
-      // Create password visibility toggle
-      const eye = document.createElement('span');
-      eye.textContent = '👁️';
-      eye.style.cursor = 'pointer';
-      eye.style.marginLeft = '8px';
-      eye.onclick = () => {
-        pwd.type = pwd.type === 'password' ? 'text' : 'password';
-        confirmPwd.type = confirmPwd.type === 'password' ? 'text' : 'password';
-      };
-      pwd.parentElement.appendChild(eye);
-    
-      // Create password requirements checklist
-      const checklist = document.createElement('ul');
-      checklist.innerHTML = `
-        <li id="chk1">Min 8 chars</li>
-        <li id="chk2">1 uppercase</li>
-        <li id="chk3">1 lowercase</li>
-        <li id="chk4">1 number</li>
-        <li id="chk5">1 special (@$!%*?&)</li>
-      `;
-      checklist.style.listStyle = 'none';
-      pwd.parentElement.appendChild(checklist);
-    
-      // Password validation rules
-      const rules = {
-        chk1: /.{8,}/,
-        chk2: /[A-Z]/,
-        chk3: /[a-z]/,
-        chk4: /\d/,
-        chk5: /[@$!%*?&]/,
-      };
-    
-      // Validate password against rules
-      pwd.addEventListener('input', () => {
-        const val = pwd.value;
-        for (const id in rules) {
-          const li = document.getElementById(id);
-          li.style.color = rules[id].test(val) ? 'green' : 'red';
-        }
-      });
-    
-      // Confirm password match
-      confirmPwd.addEventListener('input', () => {
-        const match = confirmPwd.value === pwd.value;
-        confirmPwd.style.borderColor = match ? 'green' : 'red';
-      });
-    
-      // Validate form before submission
-      document.querySelector('form').addEventListener('submit', function (e) {
-        const role = roleSelect.value;
-        if (!role) {
-          e.preventDefault();
-          alert('Please select a role.');
-          roleSelect.focus();
-          return;
-        }
-        if (role === 'driver') {
-          const checkboxes = document.querySelectorAll('input[name="license_class"]:checked');
-          if (checkboxes.length === 0) {
-            e.preventDefault();
-            alert('Please select at least one license class.');
-            return;
-          }
-        } else if (role === 'mechanic') {
-          if (!idNumberInput.value.trim()) {
-            e.preventDefault();
-            alert('Please enter an ID number for mechanics.');
-            idNumberInput.focus();
-            return;
-          }
-        }
-      });
+        
+        // Password validation functionality
+        const pwd = document.getElementById('password');
+        const confirmPwd = document.getElementById('confirm_password');
+        
+        // Create password visibility toggle
+        const eye = document.createElement('span');
+        eye.textContent = '👁️';
+        eye.style.cursor = 'pointer';
+        eye.style.marginLeft = '8px';
+        eye.onclick = () => {
+            pwd.type = pwd.type === 'password' ? 'text' : 'password';
+            confirmPwd.type = confirmPwd.type === 'password' ? 'text' : 'password';
+        };
+        pwd.parentElement.appendChild(eye);
+        
+        // Create password requirements checklist
+        const checklist = document.createElement('ul');
+        checklist.innerHTML = `
+            <li id="chk1">Min 8 chars</li>
+            <li id="chk2">1 uppercase</li>
+            <li id="chk3">1 lowercase</li>
+            <li id="chk4">1 number</li>
+            <li id="chk5">1 special (@$!%*?&)</li>
+        `;
+        checklist.style.listStyle = 'none';
+        pwd.parentElement.appendChild(checklist);
+        
+        // Password validation rules
+        const rules = {
+            chk1: /.{8,}/,
+            chk2: /[A-Z]/,
+            chk3: /[a-z]/,
+            chk4: /\d/,
+            chk5: /[@$!%*?&]/,
+        };
+        
+        // Validate password against rules
+        pwd.addEventListener('input', () => {
+            const val = pwd.value;
+            for (const id in rules) {
+                const li = document.getElementById(id);
+                li.style.color = rules[id].test(val) ? 'green' : 'red';
+            }
+        });
+        
+        // Confirm password match
+        confirmPwd.addEventListener('input', () => {
+            const match = confirmPwd.value === pwd.value;
+            confirmPwd.style.borderColor = match ? 'green' : 'red';
+        });
+        
+        // Phone number validation
+        phoneInput.addEventListener('input', function() {
+            // Remove any non-digit characters
+            this.value = this.value.replace(/\D/g, '');
+            
+            // Limit to 10 digits
+            if (this.value.length > 10) {
+                this.value = this.value.slice(0, 10);
+            }
+        });
+        
+        phoneInput.addEventListener('blur', function() {
+            if (this.value.length !== 10) {
+                this.setCustomValidity('Phone number must be 10 digits');
+                this.reportValidity();
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+        
+        // Validate form before submission
+        document.querySelector('form').addEventListener('submit', function (e) {
+            const role = roleSelect.value;
+            if (!role) {
+                e.preventDefault();
+                alert('Please select a role.');
+                roleSelect.focus();
+                return;
+            }
+            
+            // Validate phone number
+            if (phoneInput.value.length !== 10) {
+                e.preventDefault();
+                phoneInput.setCustomValidity('Phone number must be exactly 10 digits');
+                phoneInput.reportValidity();
+                phoneInput.focus();
+                return;
+            }
+            
+            if (role === 'driver') {
+                const checkboxes = document.querySelectorAll('input[name="license_class"]:checked');
+                if (checkboxes.length === 0) {
+                    e.preventDefault();
+                    alert('Please select at least one license class.');
+                    return;
+                }
+            } else if (role === 'mechanic') {
+                if (!idNumberInput.value.trim()) {
+                    e.preventDefault();
+                    alert('Please enter an ID number for mechanics.');
+                    idNumberInput.focus();
+                    return;
+                }
+            }
+        });
     });
-  </script>
+    </script>
 </body>
 </html>
 

@@ -60,6 +60,7 @@ def profile(request):
         "greeting": greeting,
         "name": user.get_full_name() or user.username,
         "driver": driver,
+        "dl_no": user.dl_no,  # Pass dl_no for profile display
     }
     return render(request, 'drivers/profile.html', context)
 
@@ -84,6 +85,7 @@ def profile_edit(request):
         full_name = request.POST.get('full_name')
         phone_number = request.POST.get('phone_number')
         email = request.POST.get('email')
+        dl_no = request.POST.get('dl_no')  # Added for driver's license number
         license_class_list = request.POST.getlist('license_class')
         license_class = ','.join(license_class_list)
         experience = request.POST.get('experience')
@@ -91,9 +93,12 @@ def profile_edit(request):
         supervisor = request.POST.get('supervisor')
         current_vehicle = request.POST.get('current_vehicle')
 
+        # Update User model
         user.first_name = full_name.split(' ')[0]
         user.last_name = ' '.join(full_name.split(' ')[1:]) if len(full_name.split(' ')) > 1 else ''
         user.email = email
+        user.phone_number = phone_number
+        user.dl_no = dl_no if user.role == 'driver' else None  # Update dl_no
         user.save()
 
         if driver:
@@ -127,6 +132,7 @@ def profile_edit(request):
         "driver": driver,
         "license_class_list": license_class_list,
         "license_options": license_options,
+        "dl_no": user.dl_no,  # Pass dl_no for form pre-filling
     })
 
 

@@ -1,7 +1,7 @@
 {% extends "drivers/base.html" %}
 {% load static %}
 
-{% block title %}My Profile | Municipality Drivers{% endblock %}
+{% block title %}My Profile | Drivers{% endblock %}
 
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'drivers/css/profile.css' %}">
@@ -16,7 +16,7 @@
     </button>
     <div class="nav-right">
       <span class="user-greeting">Welcome, {{ driver.user.first_name }}</span>
-      <img src="{% static 'drivers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      <img src="{% static 'drivers/images/murangalogo.jpg' %}" alt="User" class="user-avatar">
     </div>
   </header>
 
@@ -65,6 +65,10 @@
           <div class="info-item">
             <div class="info-label">Driver ID</div>
             <div class="info-value">{{ driver.driver_id }}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Driver's License Number</div>
+            <div class="info-value">{{ dl_no|default_if_none:'Not provided' }}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Phone Number</div>
