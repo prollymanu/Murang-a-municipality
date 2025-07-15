@@ -24,8 +24,12 @@
         </div>
 
         <div class="export-options" id="exportOptions">
-            <a href="{% url 'managers:export_invoices' 'pdf' %}?{{ request.GET.urlencode }}" class="btn-export"><i class="fas fa-file-pdf"></i> Export as PDF</a>
-            <a href="{% url 'managers:export_invoices' 'excel' %}?{{ request.GET.urlencode }}" class="btn-export"><i class="fas fa-file-excel"></i> Export as Excel</a>
+            <a href="{% url 'managers:export_invoices' 'pdf' %}?{{ request.GET.urlencode }}" class="btn-export">
+                <i class="fas fa-file-pdf"></i> Export as PDF
+            </a>
+            <a href="{% url 'managers:export_invoices' 'excel' %}?{{ request.GET.urlencode }}" class="btn-export">
+                <i class="fas fa-file-excel"></i> Export as Excel
+            </a>
         </div>
 
         <form method="get">
@@ -45,14 +49,16 @@
                     <select name="mechanic" onchange="this.form.submit()">
                         <option value="all">All Mechanics</option>
                         {% for mech in mechanics %}
-                        <option value="{{ mech.id }}" {% if request.GET.mechanic == mech.id|stringformat:"s" %}selected{% endif %}>{{ mech.full_name }}</option>
+                        <option value="{{ mech.id }}" {% if request.GET.mechanic == mech.id|stringformat:"s" %}selected{% endif %}>
+                            {{ mech.full_name }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
 
                 <div class="filter-group">
                     <label>Date Range</label>
-                    <div style="display: flex; gap: 5px;">
+                    <div style="display:flex; gap:5px;">
                         <input type="date" name="start_date" value="{{ request.GET.start_date }}" onchange="this.form.submit()">
                         <input type="date" name="end_date" value="{{ request.GET.end_date }}" onchange="this.form.submit()">
                     </div>
@@ -104,15 +110,19 @@
                         <td>{{ inv.date_of_service|date:"d M Y" }}</td>
                         <td>{{ inv.issues }}</td>
                         <td>{{ inv.vehicle_number }}</td>
-                        <td>{{ inv.mechanic_task.mechanic_profile.full_name }}</td>
+                        <td>{{ inv.mechanic_task.mechanic.full_name|default:"—" }}</td>
                         <td class="amount-positive">Ksh {{ inv.total_cost|floatformat:2 }}</td>
                         <td><span class="invoice-status status-{{ inv.status|lower }}">{{ inv.get_status_display }}</span></td>
                         <td>
                             {% if inv.status == 'pending' %}
                                 <a href="{% url 'managers:approve_invoice' inv.id %}" class="btn-approve">Approve</a>
                                 <a href="{% url 'managers:reject_invoice' inv.id %}" class="btn-reject">Reject</a>
+                            {% elif inv.status == 'approved' and inv.can_unapprove %}
+                                <a href="{% url 'managers:unapprove_invoice' inv.id %}" class="btn-outline">Unapprove</a>
+                            {% elif inv.status == 'rejected' and inv.can_unapprove %}
+                                <a href="{% url 'managers:unreject_invoice' inv.id %}" class="btn-outline">Unreject</a>
                             {% else %}
-                                <a href="{{ inv.get_pdf_url }}" class="btn-download"><i class="fas fa-download"></i></a>
+                                <span class="btn-outline disabled">No Actions</span>
                             {% endif %}
                         </td>
                     </tr>
