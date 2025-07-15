@@ -88,7 +88,9 @@
           <select class="filter-select" name="driver">
             <option value="all" {% if driver_filter == 'all' %}selected{% endif %}>All Drivers</option>
             {% for driver in drivers %}
-              <option value="{{ driver.driver_id }}" {% if driver_filter == driver.driver_id %}selected{% endif %}>{{ driver.user__username }}</option>
+              <option value="{{ driver.driver_id }}" {% if driver_filter == driver.driver_id %}selected{% endif %}>
+                {{ driver.user__first_name }} {{ driver.user__last_name|default_if_none:"" }} {% if not driver.user__first_name and not driver.user__last_name %}({{ driver.user__username }}){% endif %}
+              </option>
             {% endfor %}
           </select>
         </div>
@@ -176,7 +178,7 @@
               {% for driver in driver_stats %}
                 {% if driver.driver_id %}
                   <tr>
-                    <td>{{ driver.user__username }}</td>
+                    <td>{{ driver.user__first_name }} {{ driver.user__last_name|default_if_none:"" }} {% if not driver.user__first_name and not driver.user__last_name %}({{ driver.user__username }}){% endif %}</td>
                     <td>{{ driver.total_requests }}</td>
                     <td>{{ driver.total_issues }}</td>
                     <td>

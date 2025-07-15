@@ -1,89 +1,132 @@
 {% extends "managers/base.html" %}
 {% load static %}
 {% block title %}Personnel Management{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'managers/css/personnel_management.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="container mx-auto p-6">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold">Personnel Management</h1>
+<div class="container">
+  <div class="header-container">
+    <h1 class="page-title">Personnel Management</h1>
     <a href="{% url 'managers:add_user' %}" class="btn btn-primary">+ Add New User</a>
   </div>
 
   <!-- DRIVERS -->
-  <div class="mb-6">
-    <button class="w-full text-left btn btn-outline mb-2" onclick="toggleSection('drivers-section')">
+  <div class="section-container">
+    <button class="btn-outline" onclick="toggleSection('drivers-section')">
       Registered Drivers ({{ drivers.paginator.count }})
     </button>
-    <div id="drivers-section" class="hidden">
-      <form method="get" class="mb-3 flex gap-2">
-        <input type="text" name="driver_search" value="{{ driver_query }}" placeholder="Search drivers..." class="input input-bordered">
-        <button class="btn btn-sm">Search</button>
+    <div id="drivers-section" class="section-content hidden">
+      <form method="get" class="search-form">
+        <input type="text" name="driver_search" value="{{ driver_query }}" placeholder="Search drivers..." class="search-input">
+        <button type="submit" class="btn btn-sm">Search</button>
       </form>
       {% if drivers %}
-      <table class="table w-full">
-        <thead><tr><th>Name</th><th>License</th><th>Phone</th><th>Status</th><th>Delete</th></tr></thead>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>License</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
         <tbody>
           {% for d in drivers %}
           <tr>
             <td>{{ d.user.get_full_name }}</td>
             <td>{{ d.license_class }}</td>
             <td>{{ d.phone_number }}</td>
-            <td>{{ d.status }}</td>
             <td>
-              <form method="post" action="{% url 'managers:delete_driver' d.id %}">{% csrf_token %}
-                <button class="btn btn-sm btn-error" onclick="return confirm('Delete driver?')">Delete</button>
+              <span class="status-badge {% if d.status == 'Active' %}status-active{% else %}status-inactive{% endif %}">
+                {{ d.status }}
+              </span>
+            </td>
+            <td>
+              <form method="post" action="{% url 'managers:delete_driver' d.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-error" onclick="return confirm('Delete driver?')">Delete</button>
               </form>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-      <div class="mt-2">
-        {% if drivers.has_previous %}<a class="btn btn-sm" href="?driver_page={{ drivers.previous_page_number }}">« Prev</a>{% endif %}
-        <span class="px-2">Page {{ drivers.number }}</span>
-        {% if drivers.has_next %}<a class="btn btn-sm" href="?driver_page={{ drivers.next_page_number }}">Next »</a>{% endif %}
+      <div class="pagination">
+        {% if drivers.has_previous %}
+          <a class="pagination-btn" href="?driver_page={{ drivers.previous_page_number }}">« Prev</a>
+        {% endif %}
+        <span class="pagination-info">Page {{ drivers.number }}</span>
+        {% if drivers.has_next %}
+          <a class="pagination-btn" href="?driver_page={{ drivers.next_page_number }}">Next »</a>
+        {% endif %}
       </div>
       {% else %}
-      <p class="text-gray-500">No drivers found.</p>
+      <div class="empty-state">
+        <p>No drivers found.</p>
+      </div>
       {% endif %}
     </div>
   </div>
 
   <!-- MECHANICS -->
-  <div>
-    <button class="w-full text-left btn btn-outline mb-2" onclick="toggleSection('mechanics-section')">
+  <div class="section-container">
+    <button class="btn-outline" onclick="toggleSection('mechanics-section')">
       Registered Mechanics ({{ mechanics.paginator.count }})
     </button>
-    <div id="mechanics-section" class="hidden">
-      <form method="get" class="mb-3 flex gap-2">
-        <input type="text" name="mechanic_search" value="{{ mechanic_query }}" placeholder="Search mechanics..." class="input input-bordered">
-        <button class="btn btn-sm">Search</button>
+    <div id="mechanics-section" class="section-content hidden">
+      <form method="get" class="search-form">
+        <input type="text" name="mechanic_search" value="{{ mechanic_query }}" placeholder="Search mechanics..." class="search-input">
+        <button type="submit" class="btn btn-sm">Search</button>
       </form>
       {% if mechanics %}
-      <table class="table w-full">
-        <thead><tr><th>Name</th><th>Specialization</th><th>Phone</th><th>Status</th><th>Delete</th></tr></thead>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Specialization</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
         <tbody>
           {% for m in mechanics %}
           <tr>
             <td>{{ m.full_name }}</td>
             <td>{{ m.specialization }}</td>
             <td>{{ m.phone }}</td>
-            <td>{{ m.status }}</td>
             <td>
-              <form method="post" action="{% url 'managers:delete_mechanic' m.id %}">{% csrf_token %}
-                <button class="btn btn-sm btn-error" onclick="return confirm('Delete mechanic?')">Delete</button>
+              <span class="status-badge {% if m.status == 'Active' %}status-active{% else %}status-inactive{% endif %}">
+                {{ m.status }}
+              </span>
+            </td>
+            <td>
+              <form method="post" action="{% url 'managers:delete_mechanic' m.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-error" onclick="return confirm('Delete mechanic?')">Delete</button>
               </form>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-      <div class="mt-2">
-        {% if mechanics.has_previous %}<a class="btn btn-sm" href="?mechanic_page={{ mechanics.previous_page_number }}">« Prev</a>{% endif %}
-        <span class="px-2">Page {{ mechanics.number }}</span>
-        {% if mechanics.has_next %}<a class="btn btn-sm" href="?mechanic_page={{ mechanics.next_page_number }}">Next »</a>{% endif %}
+      <div class="pagination">
+        {% if mechanics.has_previous %}
+          <a class="pagination-btn" href="?mechanic_page={{ mechanics.previous_page_number }}">« Prev</a>
+        {% endif %}
+        <span class="pagination-info">Page {{ mechanics.number }}</span>
+        {% if mechanics.has_next %}
+          <a class="pagination-btn" href="?mechanic_page={{ mechanics.next_page_number }}">Next »</a>
+        {% endif %}
       </div>
       {% else %}
-      <p class="text-gray-500">No mechanics found.</p>
+      <div class="empty-state">
+        <p>No mechanics found.</p>
+      </div>
       {% endif %}
     </div>
   </div>
@@ -93,7 +136,8 @@
 function toggleSection(id) {
   const el = document.getElementById(id);
   el.classList.toggle("hidden");
+  const btn = el.previousElementSibling;
+  btn.classList.toggle("active");
 }
 </script>
 {% endblock %}
-

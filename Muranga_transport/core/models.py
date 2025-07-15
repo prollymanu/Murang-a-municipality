@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core.exceptions import ValidationError
+from drivers.models import KENYA_LICENSE_CLASSES
+
 
 class User(AbstractUser):
     ROLE_CHOICES = (
@@ -19,6 +22,15 @@ class User(AbstractUser):
         return self.username
 
 
+def validate_license_class(value):
+    if not value:
+        return
+    valid_codes = [code for code, _ in KENYA_LICENSE_CLASSES]
+    selected_codes = [code.strip() for code in value.split(',') if code.strip()]
+    for code in selected_codes:
+        if code not in valid_codes:
+            raise ValidationError(f"Invalid license class: {code}. Must be one of {', '.join(valid_codes)}.")
+
 class RegistrationRequest(models.Model):
     ROLE_CHOICES = (
         ('driver', 'Driver'),
@@ -29,7 +41,7 @@ class RegistrationRequest(models.Model):
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=20, unique=True)
     drivers_license = models.CharField(max_length=50, blank=True, null=True)  # For drivers
-    license_class = models.CharField(max_length=100, blank=True, null=True)  # For drivers
+    license_class = models.CharField(max_length=100, blank=True, null=True, validators=[validate_license_class])  # For drivers
     experience_years = models.PositiveIntegerField(default=0)  # For both
     department = models.CharField(max_length=100, blank=True, null=True)  # For drivers
     supervisor = models.CharField(max_length=100, blank=True, null=True)  # For drivers

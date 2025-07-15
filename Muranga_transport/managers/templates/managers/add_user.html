@@ -1,36 +1,93 @@
 {% extends "managers/base.html" %}
 {% load static %}
-{% block title %}Add New User{% endblock %}
+{% block title %}Add New User | Murang'a Transport{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'managers/css/add_user.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="max-w-3xl mx-auto p-6 bg-white shadow">
   <h1 class="text-2xl font-bold mb-4">Add New User</h1>
 
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
   <form method="post">{% csrf_token %}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <select name="role" class="select select-bordered" required>
-        <option value="">Select Role</option>
-        <option value="driver">Driver</option>
-        <option value="mechanic">Mechanic</option>
-      </select>
-      <input type="text" name="firstName" placeholder="First Name" required class="input input-bordered">
-      <input type="text" name="lastName" placeholder="Last Name" required class="input input-bordered">
-      <input type="email" name="email" placeholder="Email" required class="input input-bordered">
-      <input type="text" name="phone" placeholder="Phone Number" required class="input input-bordered">
-      <input type="text" name="idNumber" placeholder="ID Number" required class="input input-bordered">
-      <input type="text" name="location" placeholder="Location" class="input input-bordered">
-      <input type="number" name="experienceYears" placeholder="Experience Years" required class="input input-bordered">
-      <input type="password" name="password" placeholder="Password" required class="input input-bordered">
-      <input type="password" name="confirmPassword" placeholder="Confirm Password" required class="input input-bordered">
-
-      <!-- DRIVER -->
-      <input type="text" name="driversLicense" placeholder="Driver's License No." class="input input-bordered">
-      <input type="text" name="licenseClass" placeholder="License Class" class="input input-bordered">
-      <input type="text" name="department" placeholder="Department (Drivers)" class="input input-bordered">
-      <input type="text" name="supervisor" placeholder="Supervisor (Drivers)" class="input input-bordered">
-
-      <!-- MECHANIC -->
-      <input type="text" name="specialization" placeholder="Specialization (Mechanics)" class="input input-bordered">
+      <div class="form-group">
+        <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
+        <select name="role" id="role" class="select select-bordered w-full" required>
+          <option value="">Select Role</option>
+          <option value="driver">Driver</option>
+          <option value="mechanic">Mechanic</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="firstName" class="block text-sm font-medium text-gray-700">First Name</label>
+        <input type="text" name="firstName" id="firstName" placeholder="First Name" required class="input input-bordered w-full">
+      </div>
+      <div class="form-group">
+        <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
+        <input type="text" name="lastName" id="lastName" placeholder="Last Name" required class="input input-bordered w-full">
+      </div>
+      <div class="form-group">
+        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+        <input type="email" name="email" id="email" placeholder="Email" required class="input input-bordered w-full">
+      </div>
+      <div class="form-group">
+        <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+        <input type="text" name="phone" id="phone" placeholder="Phone Number" required class="input input-bordered w-full">
+      </div>
+      <div class="form-group">
+        <label for="idNumber" class="block text-sm font-medium text-gray-700">ID Number</label>
+        <input type="text" name="idNumber" id="idNumber" placeholder="ID Number" class="input input-bordered w-full">
+      </div>
+      <div class="form-group">
+        <label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+        <input type="text" name="location" id="location" placeholder="Location" class="input input-bordered w-full">
+      </div>
+      <div class="form-group">
+        <label for="experienceYears" class="block text-sm font-medium text-gray-700">Experience Years</label>
+        <input type="number" name="experienceYears" id="experienceYears" placeholder="Experience Years" required class="input input-bordered w-full" min="0">
+      </div>
+      <div class="form-group driver-only hidden">
+        <label for="driversLicense" class="block text-sm font-medium text-gray-700">Driver's License No.</label>
+        <input type="text" name="driversLicense" id="driversLicense" placeholder="Driver's License No." class="input input-bordered w-full">
+      </div>
+      <div class="form-group driver-only hidden">
+        <label for="licenseClass" class="block text-sm font-medium text-gray-700">License Classes</label>
+        <select name="licenseClass" id="licenseClass" class="select select-bordered w-full" multiple>
+          {% for code, name in KENYA_LICENSE_CLASSES %}
+            <option value="{{ code }}">{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group driver-only hidden">
+        <label for="department" class="block text-sm font-medium text-gray-700">Department</label>
+        <input type="text" name="department" id="department" placeholder="Department" class="input input-bordered w-full">
+      </div>
+      <div class="form-group driver-only hidden">
+        <label for="supervisor" class="block text-sm font-medium text-gray-700">Supervisor</label>
+        <input type="text" name="supervisor" id="supervisor" placeholder="Supervisor" class="input input-bordered w-full">
+      </div>
+      <div class="form-group mechanic-only hidden">
+        <label for="specialization" class="block text-sm font-medium text-gray-700">Specialization</label>
+        <input type="text" name="specialization" id="specialization" placeholder="Specialization" class="input input-bordered w-full">
+      </div>
+      <div class="form-group">
+        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+        <input type="password" name="password" id="password" placeholder="Password" required class="input input-bordered w-full">
+      </div>
+      <div class="form-group">
+        <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+        <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm Password" required class="input input-bordered w-full">
+      </div>
     </div>
 
     <div class="mt-6 flex justify-end">
@@ -38,4 +95,30 @@
     </div>
   </form>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const roleSelect = document.getElementById('role');
+    const driverFields = document.querySelectorAll('.driver-only');
+    const mechanicFields = document.querySelectorAll('.mechanic-only');
+
+    roleSelect.addEventListener('change', function () {
+      driverFields.forEach(el => el.classList.add('hidden'));
+      mechanicFields.forEach(el => el.classList.add('hidden'));
+
+      if (this.value === 'driver') {
+        driverFields.forEach(el => el.classList.remove('hidden'));
+      } else if (this.value === 'mechanic') {
+        mechanicFields.forEach(el => el.classList.remove('hidden'));
+      }
+    });
+
+    // Initialize fields based on preselected role
+    if (roleSelect.value === 'driver') {
+      driverFields.forEach(el => el.classList.remove('hidden'));
+    } else if (roleSelect.value === 'mechanic') {
+      mechanicFields.forEach(el => el.classList.remove('hidden'));
+    }
+  });
+</script>
 {% endblock %}

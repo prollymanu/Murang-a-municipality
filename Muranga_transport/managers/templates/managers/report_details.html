@@ -96,7 +96,7 @@
               {% for issue in request.issues.all %}
                 <tr>
                   <td>#{{ request.pk }}</td>
-                  <td>{{ request.driver.user.username }}</td>
+                  <td>{{ request.driver.user.first_name }} {{ request.driver.user.last_name|default_if_none:"" }} {% if not request.driver.user.first_name and not request.driver.user.last_name %}({{ request.driver.user.username }}){% endif %}</td>
                   <td>{{ request.vehicle.make }} {{ request.vehicle.model }} ({{ request.vehicle.number_plate }})</td>
                   <td>{{ issue.title }} ({{ issue.priority }})</td>
                   <td>{{ issue.cost_estimate|floatformat:2 }}</td>

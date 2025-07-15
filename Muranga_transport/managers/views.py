@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum, Q
-from drivers.models import MaintenanceRequest, RequestIssue, Vehicle, DriverProfile
+from drivers.models import DriverProfile, Vehicle, MaintenanceRequest, RequestIssue, KENYA_LICENSE_CLASSES
 from mechanics.models import MechanicProfile, MechanicTask
 from core.models import User, RegistrationRequest
 from django.views.decorators.http import require_POST
@@ -18,7 +18,6 @@ import re
 import io
 import csv
 import datetime
-from core.models import User
 from core.utils import generate_unique_id, get_greeting
 from drivers.models import DriverProfile
 from mechanics.models import MechanicProfile
@@ -161,7 +160,6 @@ def approve_request(request, id):
         'can_unapprove': can_unapprove,
     })
 
-
 @login_required
 def unapprove_request(request, id):
     req = get_object_or_404(MaintenanceRequest, id=id)
@@ -218,7 +216,7 @@ def assign_mechanic(request, id):
             status='in_progress',
             priority=req.issues.first().priority if req.issues.exists() else 'medium',
             notes=f"Assigned to {mech.full_name} on {timezone.now().strftime('%Y-%m-%d %H:%M')}",
-           unique_task_id=f"T{uuid.uuid4().hex[:7].upper()}"
+            unique_task_id=f"T{uuid.uuid4().hex[:7].upper()}"
         )
         req.mechanic = mech
         req.status = 'in_progress'
@@ -276,6 +274,11 @@ def applications_view(request):
 def approve_registration(request, id):
     reg = get_object_or_404(RegistrationRequest, id=id)
 
+    # Prevent approving already approved requests
+    if reg.is_approved:
+        messages.error(request, 'Registration already approved.')
+        return redirect('managers:applications')
+
     # Prevent duplicate user
     if User.objects.filter(email=reg.email).exists():
         messages.error(request, 'User with this email already exists.')
@@ -287,6 +290,7 @@ def approve_registration(request, id):
         first_name = full_name_parts[0]
         last_name = " ".join(full_name_parts[1:]) if len(full_name_parts) > 1 else ''
 
+        # Generate unique username
         username = f"{reg.role}_{uuid.uuid4().hex[:8]}"
 
         # Create user with hashed password directly
@@ -327,16 +331,18 @@ def approve_registration(request, id):
                 specialization=reg.specialization if reg.specialization else None
             )
 
+        # Delete registration request
         reg.delete()
         messages.success(request, f"{reg.full_name} approved and moved to active users.")
 
     except Exception as e:
-        print(f"[ERROR] Approval failed: {e}")
-        messages.error(request, "Something went wrong during approval.")
+        messages.error(request, f"Approval failed: {str(e)}")
+        return redirect('managers:applications')
 
     return redirect('managers:applications')
 
 @login_required
+@require_POST
 def deny_registration(request, id):
     if request.method == 'POST':
         reg = get_object_or_404(RegistrationRequest, id=id)
@@ -416,7 +422,7 @@ def add_user_form(request):
 
         # Optional fields
         drivers_license = request.POST.get('driversLicense')
-        license_class = request.POST.get('licenseClass')
+        license_classes = request.POST.getlist('licenseClass')  # Multiple select
         department = request.POST.get('department')
         supervisor = request.POST.get('supervisor')
         specialization = request.POST.get('specialization')
@@ -424,37 +430,46 @@ def add_user_form(request):
         # === Validation ===
         if not all([role, first_name, last_name, email, phone_number, experience_years, password, confirm_password]):
             messages.error(request, 'Required fields missing.')
-            return redirect('managers:add_user')
+            return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
         if role not in ['driver', 'mechanic']:
             messages.error(request, 'Invalid role selected.')
-            return redirect('managers:add_user')
+            return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
         if password != confirm_password:
             messages.error(request, 'Passwords do not match.')
-            return redirect('managers:add_user')
+            return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
         if len(password) < 8 or not re.search(r'[A-Z]', password) or not re.search(r'[a-z]', password) or \
            not re.search(r'\d', password) or not re.search(r'[@$!%*?&]', password):
             messages.error(request, 'Password must be strong: min 8 chars, upper, lower, number & special.')
-            return redirect('managers:add_user')
+            return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
         # Duplicate checks
         if User.objects.filter(email=email).exists():
             messages.error(request, 'Email already used.')
-            return redirect('managers:add_user')
+            return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
         if User.objects.filter(phone_number=phone_number).exists():
             messages.error(request, 'Phone number already used.')
-            return redirect('managers:add_user')
+            return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
         if User.objects.filter(id_no=id_number).exists():
             messages.error(request, 'ID number already used.')
-            return redirect('managers:add_user')
+            return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
-        if role == 'driver' and drivers_license and User.objects.filter(dl_no=drivers_license).exists():
-            messages.error(request, 'Driver’s license already used.')
-            return redirect('managers:add_user')
+        if role == 'driver':
+            if not drivers_license:
+                messages.error(request, 'Driver’s license number is required.')
+                return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
+            if not license_classes:
+                messages.error(request, 'At least one license class is required.')
+                return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
+            valid_codes = [code for code, _ in KENYA_LICENSE_CLASSES]
+            for code in license_classes:
+                if code not in valid_codes:
+                    messages.error(request, f"Invalid license class: {code}.")
+                    return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
         # === Creation ===
         try:
@@ -481,12 +496,11 @@ def add_user_form(request):
                     user=user,
                     driver_id=generate_unique_id('DRV'),
                     phone_number=phone_number,
-                    license_class=license_class,
+                    license_class=','.join(license_classes),
                     experience_years=int(experience_years),
                     department=department,
                     supervisor=supervisor
                 )
-
             else:  # mechanic
                 MechanicProfile.objects.create(
                     user=user,
@@ -506,10 +520,9 @@ def add_user_form(request):
         except Exception as e:
             print(f"[ERROR] User creation failed: {e}")
             messages.error(request, 'Something went wrong while adding the user.')
-            return redirect('managers:add_user')
+            return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
-    # GET method → render the form
-    return render(request, 'managers/add_user.html')
+    return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
 @login_required
 def jobs(request):
@@ -813,13 +826,13 @@ def reports(request):
         total_cost=Sum('tasks__invoice__total_cost', filter=Q(tasks__status='completed'))
     ).values('full_name', 'mechanic_id', 'total_tasks', 'total_cost')
 
-    # Driver Reports (exclude null/empty driver_id)
+    # Driver Reports (exclude null/empty driver_id, use first_name and last_name)
     driver_stats = DriverProfile.objects.filter(
         driver_id__isnull=False, driver_id__gt=''
     ).annotate(
         total_requests=Count('maintenancerequest'),
         total_issues=Count('maintenancerequest__issues')
-    ).values('user__username', 'driver_id', 'total_requests', 'total_issues')
+    ).values('driver_id', 'user__first_name', 'user__last_name', 'total_requests', 'total_issues')
 
     # Vehicle Reports (exclude null/empty number_plate)
     vehicle_stats = Vehicle.objects.filter(
@@ -846,7 +859,7 @@ def reports(request):
         'driver_filter': driver_filter,
         'mechanic_filter': mechanic_filter,
         'vehicles': Vehicle.objects.filter(number_plate__isnull=False, number_plate__gt='').values('number_plate'),
-        'drivers': DriverProfile.objects.filter(driver_id__isnull=False, driver_id__gt='').values('driver_id', 'user__username'),
+        'drivers': DriverProfile.objects.filter(driver_id__isnull=False, driver_id__gt='').values('driver_id', 'user__first_name', 'user__last_name'),
         'mechanics': MechanicProfile.objects.filter(mechanic_id__isnull=False, mechanic_id__gt='').values('mechanic_id', 'full_name'),
         'total_requests': total_requests,
         'pending_requests': pending_requests,
@@ -895,10 +908,11 @@ def report_details(request, report_type, report_id):
     elif report_type == 'driver':
         profile = get_object_or_404(DriverProfile, driver_id=report_id)
         requests = MaintenanceRequest.objects.filter(driver=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice')
-        title = f"Driver Report: {profile.user.username}"
+        driver_name = f"{profile.user.first_name} {profile.user.last_name}".strip() or profile.user.username
+        title = f"Driver Report: {driver_name}"
         details = {
             'type': 'driver',
-            'name': profile.user.username,
+            'name': driver_name,
             'id': profile.driver_id,
             'license_class': profile.license_class_list,
             'experience_years': profile.experience_years,
@@ -923,6 +937,7 @@ def report_details(request, report_type, report_id):
         'requests': requests,
     }
     return render(request, 'managers/report_details.html', context)
+
 @login_required
 def settings(request):
     return render(request, 'managers/settings.html')

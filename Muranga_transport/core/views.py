@@ -6,6 +6,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 from .models import RegistrationRequest
 import re
+from drivers.models import KENYA_LICENSE_CLASSES
 
 User = get_user_model()
 
@@ -63,57 +64,85 @@ def login_view(request):
 
 def register_view(request):
     if request.method == 'POST':
+        print("POST data:", dict(request.POST))  # Debug form data
         role = request.POST.get('role')
-        full_name = request.POST.get('fullName')
+        full_name = request.POST.get('full_name')
         email = request.POST.get('email')
-        phone_number = request.POST.get('phone')
-        drivers_license = request.POST.get('license')
-        license_class = request.POST.get('licenseClass')
-        experience_years = request.POST.get('experienceYears')
+        phone_number = request.POST.get('phone_number')
+        drivers_license = request.POST.get('drivers_license')
+        license_class = request.POST.getlist('license_class')  # Multiple checkboxes
+        experience_years = request.POST.get('experience_years')
         department = request.POST.get('department')
         supervisor = request.POST.get('supervisor')
-        id_number = request.POST.get('idNumber')
+        id_number = request.POST.get('id_number')
         location = request.POST.get('location')
         specialization = request.POST.get('specialization')
         password = request.POST.get('password')
-        confirm_password = request.POST.get('confirmPassword')
+        confirm_password = request.POST.get('confirm_password')
+        terms = request.POST.get('terms')
 
         # Basic validation
-        if not all([role, full_name, email, phone_number, experience_years, password, confirm_password]):
-            messages.error(request, 'Required fields missing.')
-            return redirect('core:register')
+        if not all([role, full_name, email, phone_number, experience_years, password, confirm_password, terms]):
+            missing = [k for k, v in {'role': role, 'full_name': full_name, 'email': email, 'phone_number': phone_number, 
+                                     'experience_years': experience_years, 'password': password, 'confirm_password': confirm_password, 
+                                     'terms': terms}.items() if not v]
+            messages.error(request, f'Missing required fields: {", ".join(missing)}.')
+            return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
+
+        if role not in ['driver', 'mechanic']:
+            messages.error(request, 'Invalid role selected.')
+            return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
 
         if password != confirm_password:
             messages.error(request, 'Passwords do not match.')
-            return redirect('core:register')
+            return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
 
         if len(password) < 8 or not re.search(r'[A-Z]', password) or \
            not re.search(r'[a-z]', password) or not re.search(r'\d', password) or \
            not re.search(r'[@$!%*?&]', password):
             messages.error(request, 'Password must be strong: 8+ chars, uppercase, lowercase, digit & special char.')
-            return redirect('core:register')
+            return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
 
         if role == 'driver' and not (drivers_license and license_class):
-            messages.error(request, 'Driver’s license number and class are required.')
-            return redirect('core:register')
+            missing_driver = []
+            if not drivers_license:
+                missing_driver.append('license number')
+            if not license_class:
+                missing_driver.append('license class')
+            messages.error(request, f'Driver’s {", ".join(missing_driver)} required.')
+            return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
 
         if role == 'mechanic' and not id_number:
             messages.error(request, 'Mechanic ID number is required.')
-            return redirect('core:register')
+            return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
+
+        # Validate license classes
+        if role == 'driver':
+            valid_codes = [code for code, _ in KENYA_LICENSE_CLASSES]
+            for code in license_class:
+                if code not in valid_codes:
+                    messages.error(request, f"Invalid license class: {code}. Must be one of {', '.join(valid_codes)}.")
+                    return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
+            if len(license_class) != len(set(license_class)):
+                messages.error(request, 'Duplicate license classes are not allowed.')
+                return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
 
         # Uniqueness checks
         if User.objects.filter(email=email).exists() or RegistrationRequest.objects.filter(email=email).exists():
             messages.error(request, 'Email is already in use.')
-            return redirect('core:register')
+            return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
+
         if User.objects.filter(phone_number=phone_number).exists() or RegistrationRequest.objects.filter(phone_number=phone_number).exists():
             messages.error(request, 'Phone number already in use.')
-            return redirect('core:register')
-        if role == 'driver' and RegistrationRequest.objects.filter(drivers_license=drivers_license).exists():
+            return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
+
+        if role == 'driver' and drivers_license and RegistrationRequest.objects.filter(drivers_license=drivers_license).exists():
             messages.error(request, 'License number already in use.')
-            return redirect('core:register')
+            return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
+
         if id_number and (User.objects.filter(id_no=id_number).exists() or RegistrationRequest.objects.filter(id_number=id_number).exists()):
             messages.error(request, 'ID number already in use.')
-            return redirect('core:register')
+            return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
 
         # Save registration request
         try:
@@ -123,7 +152,7 @@ def register_view(request):
                 email=email,
                 phone_number=phone_number,
                 drivers_license=drivers_license or '',
-                license_class=license_class or '',
+                license_class=','.join(license_class) if role == 'driver' and license_class else '',
                 experience_years=int(experience_years),
                 department=department or '',
                 supervisor=supervisor or '',
@@ -134,14 +163,13 @@ def register_view(request):
                 is_approved=False
             )
             messages.success(request, 'Registration request submitted successfully.')
-            return redirect('core:register')
+            return redirect('core:login')
         except Exception as e:
-            print(f"Error saving registration request: {e}")
-            messages.error(request, 'An error occurred. Try again.')
-            return redirect('core:register')
+            print(f"Error saving registration request: {str(e)}")
+            messages.error(request, f'Registration failed: {str(e)}')
+            return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES, 'form_data': request.POST})
 
-    return render(request, 'core/register.html')
-
+    return render(request, 'core/register.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
 def forgot_password_view(request):
     return render(request, 'core/forgot_password.html')
