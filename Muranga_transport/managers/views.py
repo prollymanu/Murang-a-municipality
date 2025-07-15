@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, Sum
+from django.db.models import Count, Sum, Q
 from drivers.models import MaintenanceRequest, RequestIssue, Vehicle, DriverProfile
 from mechanics.models import MechanicProfile, MechanicTask
 from core.models import User, RegistrationRequest
@@ -769,10 +769,160 @@ def export_invoices_pdf(request):
     p.save()
     return response
 
+
 @login_required
 def reports(request):
-    return render(request, 'managers/reports.html')
+    # Filters
+    status_filter = request.GET.get('status', 'all')
+    date_range = request.GET.get('date_range', 'all')
+    vehicle_filter = request.GET.get('vehicle', 'all')
+    driver_filter = request.GET.get('driver', 'all')
+    mechanic_filter = request.GET.get('mechanic', 'all')
 
+    # Base queryset for maintenance requests
+    requests = MaintenanceRequest.objects.select_related('driver__user', 'vehicle', 'mechanic').prefetch_related('issues')
+
+    # Apply filters
+    if status_filter != 'all':
+        requests = requests.filter(status=status_filter)
+    if vehicle_filter != 'all':
+        requests = requests.filter(vehicle__number_plate=vehicle_filter)
+    if driver_filter != 'all':
+        requests = requests.filter(driver__driver_id=driver_filter)
+    if mechanic_filter != 'all':
+        requests = requests.filter(mechanic__mechanic_id=mechanic_filter)
+    if date_range != 'all':
+        if date_range == 'today':
+            requests = requests.filter(submitted_at__date=timezone.now().date())
+        elif date_range == 'week':
+            requests = requests.filter(submitted_at__gte=timezone.now() - timedelta(days=7))
+        elif date_range == 'month':
+            requests = requests.filter(submitted_at__gte=timezone.now() - timedelta(days=30))
+
+    # Calculate stats for the stats cards
+    total_requests = requests.count()
+    pending_requests = requests.filter(status='pending').count()
+    completed_requests = requests.filter(status='completed').count()
+    high_priority_requests = requests.filter(issues__priority='high').distinct().count()
+
+    # Mechanic Reports (exclude null/empty mechanic_id)
+    mechanic_stats = MechanicProfile.objects.filter(
+        mechanic_id__isnull=False, mechanic_id__gt=''
+    ).annotate(
+        total_tasks=Count('tasks', filter=Q(tasks__status='completed')),
+        total_cost=Sum('tasks__invoice__total_cost', filter=Q(tasks__status='completed'))
+    ).values('full_name', 'mechanic_id', 'total_tasks', 'total_cost')
+
+    # Driver Reports (exclude null/empty driver_id)
+    driver_stats = DriverProfile.objects.filter(
+        driver_id__isnull=False, driver_id__gt=''
+    ).annotate(
+        total_requests=Count('maintenancerequest'),
+        total_issues=Count('maintenancerequest__issues')
+    ).values('user__username', 'driver_id', 'total_requests', 'total_issues')
+
+    # Vehicle Reports (exclude null/empty number_plate)
+    vehicle_stats = Vehicle.objects.filter(
+        number_plate__isnull=False, number_plate__gt=''
+    ).annotate(
+        total_requests=Count('maintenancerequest'),
+        total_cost=Sum('maintenancerequest__issues__cost_estimate')
+    ).values('number_plate', 'make', 'model', 'total_requests', 'total_cost')
+
+    # Chart Data (e.g., number of requests per vehicle)
+    chart_labels = [v['number_plate'] for v in vehicle_stats]
+    chart_data = [v['total_requests'] for v in vehicle_stats]
+
+    context = {
+        'requests': requests,
+        'mechanic_stats': mechanic_stats,
+        'driver_stats': driver_stats,
+        'vehicle_stats': vehicle_stats,
+        'chart_labels': chart_labels,
+        'chart_data': chart_data,
+        'status_filter': status_filter,
+        'date_range': date_range,
+        'vehicle_filter': vehicle_filter,
+        'driver_filter': driver_filter,
+        'mechanic_filter': mechanic_filter,
+        'vehicles': Vehicle.objects.filter(number_plate__isnull=False, number_plate__gt='').values('number_plate'),
+        'drivers': DriverProfile.objects.filter(driver_id__isnull=False, driver_id__gt='').values('driver_id', 'user__username'),
+        'mechanics': MechanicProfile.objects.filter(mechanic_id__isnull=False, mechanic_id__gt='').values('mechanic_id', 'full_name'),
+        'total_requests': total_requests,
+        'pending_requests': pending_requests,
+        'completed_requests': completed_requests,
+        'high_priority_requests': high_priority_requests,
+    }
+    return render(request, 'managers/reports.html', context)
+
+@login_required
+def export_reports(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="maintenance_reports_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Report Type', 'ID', 'Driver', 'Vehicle', 'Issue', 'Cost', 'Status', 'Date'])
+
+    requests = MaintenanceRequest.objects.select_related('driver__user', 'vehicle', 'mechanic').prefetch_related('issues')
+    for req in requests:
+        for issue in req.issues.all():
+            writer.writerow([
+                'Maintenance',
+                req.pk,
+                req.driver.user.username,
+                req.vehicle.number_plate,
+                issue.title,
+                issue.cost_estimate,
+                req.status,
+                req.submitted_at.strftime('%Y-%m-%d')
+            ])
+
+    return response
+
+@login_required
+def report_details(request, report_type, report_id):
+    if report_type == 'mechanic':
+        profile = get_object_or_404(MechanicProfile, mechanic_id=report_id)
+        requests = MaintenanceRequest.objects.filter(mechanic=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice')
+        title = f"Mechanic Report: {profile.full_name or profile.user.username}"
+        details = {
+            'type': 'mechanic',
+            'name': profile.full_name or profile.user.username,
+            'id': profile.mechanic_id,
+            'experience_years': profile.experience_years,
+            'specialization': profile.specialization_list,
+        }
+    elif report_type == 'driver':
+        profile = get_object_or_404(DriverProfile, driver_id=report_id)
+        requests = MaintenanceRequest.objects.filter(driver=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice')
+        title = f"Driver Report: {profile.user.username}"
+        details = {
+            'type': 'driver',
+            'name': profile.user.username,
+            'id': profile.driver_id,
+            'license_class': profile.license_class_list,
+            'experience_years': profile.experience_years,
+        }
+    elif report_type == 'vehicle':
+        profile = get_object_or_404(Vehicle, number_plate=report_id)
+        requests = MaintenanceRequest.objects.filter(vehicle=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice')
+        title = f"Vehicle Report: {profile.make} {profile.model} ({profile.number_plate})"
+        details = {
+            'type': 'vehicle',
+            'name': f"{profile.make} {profile.model}",
+            'id': profile.number_plate,
+            'year': profile.year,
+            'mileage': profile.mileage,
+        }
+    else:
+        return HttpResponse("Invalid report type", status=400)
+
+    context = {
+        'title': title,
+        'details': details,
+        'requests': requests,
+    }
+    return render(request, 'managers/report_details.html', context)
 @login_required
 def settings(request):
     return render(request, 'managers/settings.html')

@@ -1,0 +1,118 @@
+{% extends "managers/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Murang'a Transport{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'managers/css/reports.css' %}">
+{% endblock %}
+
+{% block content %}
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <button class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="nav-right">
+        <span class="user-greeting">
+          {% if user %}
+            Welcome, {{ user.first_name|default:"Transport Manager" }}
+          {% else %}
+            Welcome, Transport Manager
+          {% endif %}
+        </span>
+        <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      </div>
+    </header>
+
+    <div class="page-header">
+      <h1 class="page-title">{{ title }}</h1>
+      <p class="page-subtitle">Detailed report information</p>
+    </div>
+
+    <!-- Details Card -->
+    <div class="card details-card">
+      <h2 class="card-title">Details</h2>
+      <div class="details-grid">
+        <div class="detail-group">
+          <span class="detail-label">ID</span>
+          <span class="detail-value">{{ details.id }}</span>
+        </div>
+        <div class="detail-group">
+          <span class="detail-label">Name</span>
+          <span class="detail-value">{{ details.name }}</span>
+        </div>
+        {% if details.type == 'mechanic' or details.type == 'driver' %}
+          <div class="detail-group">
+            <span class="detail-label">Experience</span>
+            <span class="detail-value">{{ details.experience_years }} years</span>
+          </div>
+        {% endif %}
+        {% if details.type == 'mechanic' and details.specialization %}
+          <div class="detail-group">
+            <span class="detail-label">Specializations</span>
+            <span class="detail-value">{{ details.specialization|join:", " }}</span>
+          </div>
+        {% endif %}
+        {% if details.type == 'driver' and details.license_class %}
+          <div class="detail-group">
+            <span class="detail-label">License Classes</span>
+            <span class="detail-value">{{ details.license_class|join:", " }}</span>
+          </div>
+        {% endif %}
+        {% if details.type == 'vehicle' %}
+          <div class="detail-group">
+            <span class="detail-label">Year</span>
+            <span class="detail-value">{{ details.year|default:"N/A" }}</span>
+          </div>
+          <div class="detail-group">
+            <span class="detail-label">Mileage</span>
+            <span class="detail-value">{{ details.mileage|default:"N/A" }} km</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Maintenance Requests -->
+    <div class="card">
+      <h2 class="card-title">Maintenance Requests</h2>
+      <div class="table-container">
+        <table class="reports-table">
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Driver</th>
+              <th>Vehicle</th>
+              <th>Issue</th>
+              <th>Cost Estimate</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for request in requests %}
+              {% for issue in request.issues.all %}
+                <tr>
+                  <td>#{{ request.pk }}</td>
+                  <td>{{ request.driver.user.username }}</td>
+                  <td>{{ request.vehicle.make }} {{ request.vehicle.model }} ({{ request.vehicle.number_plate }})</td>
+                  <td>{{ issue.title }} ({{ issue.priority }})</td>
+                  <td>{{ issue.cost_estimate|floatformat:2 }}</td>
+                  <td>{{ request.get_status_display }}</td>
+                  <td>{{ request.submitted_at|date:"M d, Y" }}</td>
+                </tr>
+              {% endfor %}
+            {% empty %}
+              <tr><td colspan="7">No maintenance requests found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-actions">
+        <a href="{% url 'managers:reports' %}" class="btn btn-outline">Back to Reports</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
