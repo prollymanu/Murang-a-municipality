@@ -1,6 +1,6 @@
 {% extends "mechanics/base.html" %}
 {% load static %}
-{% block title %}My Tasks | Murang'a Transport{% endblock %}
+{% block title %}My Tasks | Mechanics{% endblock %}
 
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'managers/css/tasks.css' %}">
@@ -13,7 +13,7 @@
     <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
     <div class="nav-right">
       <span class="user-greeting">{{ greeting }}, {{ mechanic.full_name|default:mechanic.user.get_full_name|default:mechanic.user.username }}</span>
-      <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      <img src="{% static 'managers/images/murangalogo.jpg' %}" alt="User" class="user-avatar">
     </div>
   </header>
 

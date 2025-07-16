@@ -1,12 +1,10 @@
 {% extends "mechanics/base.html" %}
 {% load static %}
 
-{% block title %}Submit Invoice for Task {{ task.unique_task_id }} | Murang'a Transport{% endblock %}
+{% block title %}Submit Invoice for Task {{ task.unique_task_id }} | Mechanics{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'managers/css/styles.css' %}">
+  <link rel="stylesheet" href="{% static 'managers/css/submit_invoice.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -15,7 +13,7 @@
       <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
       <div class="nav-right">
         <span class="user-greeting">{{ greeting }}, {{ mechanic.full_name|default:mechanic.user.get_full_name|default:mechanic.user.username }}</span>
-        <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+        <img src="{% static 'managers/images/murangalogo.jpg' %}" alt="User" class="user-avatar">
       </div>
     </header>
 

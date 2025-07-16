@@ -1,11 +1,9 @@
 {% extends "managers/base.html" %}
 {% load static %}
 
-{% block title %}Maintenance Request #{{ request_obj.id }} | Murang'a Transport{% endblock %}
+{% block title %}Maintenance Request #{{ request_obj.id }} | Transport Manager{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'managers/css/request_detail.css' %}">
   <style>
     .modal {
@@ -77,7 +75,7 @@
         <span class="user-greeting">
           {{ greeting }}, {{ name }}
         </span>
-        <img src="{% static 'managers/images/murangalogo.png' %}" alt="User" class="user-avatar">
+        <img src="{% static 'managers/images/murangalogo.jpg' %}" alt="User" class="user-avatar">
       </div>
     </header>
     

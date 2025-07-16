@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}Mechanic Dashboard{% endblock %}</title>
+  <title>{% block title %}Mechanics{% endblock %}</title>
 
   <!-- Common Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -26,7 +26,7 @@
     </button>
     <div class="nav-right">
       <span class="user-greeting">Welcome, {{ mechanic.get_full_name }}</span>
-      <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="User" class="user-avatar">
+      <img src="{% static 'mechanics/images/murangalogo.jpg' %}" alt="User" class="user-avatar">
     </div>
   </header>
 
@@ -34,7 +34,7 @@
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <img src="{% static 'mechanics/images/murangalogo.png' %}" alt="Murang'a Logo">
-      <h3>Municipality<span>®</span> | MECHANIC</h3>
+      <h3> MECHANIC</h3>
     </div>
     <nav class="sidebar-nav">
       <ul>
