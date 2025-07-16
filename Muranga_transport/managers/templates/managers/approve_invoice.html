@@ -3,6 +3,10 @@
 
 {% block title %}Approve Invoice{% endblock %}
 
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'managers/css/approve_invoice.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="form-container">
     <h2><i class="fas fa-check-circle"></i> Approve Invoice #{{ invoice.task_unique_id }}</h2>

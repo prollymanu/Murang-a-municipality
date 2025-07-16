@@ -3,6 +3,10 @@
 
 {% block title %}Reject Invoice{% endblock %}
 
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'managers/css/reject_invoice.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="form-container">
     <h2><i class="fas fa-times-circle"></i> Reject Invoice #{{ invoice.task_unique_id }}</h2>

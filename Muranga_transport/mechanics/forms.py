@@ -69,6 +69,12 @@ class MechanicProfileForm(forms.ModelForm):
 
 
 class RepairInvoiceForm(forms.ModelForm):
+    task_unique_id = forms.CharField(
+        max_length=50,
+        required=True,
+        label="Task ID",
+        widget=forms.TextInput(attrs={'placeholder': 'e.g. TASK123'}),
+    )
     date_of_service = forms.DateField(
         widget=forms.DateInput(attrs={'type': 'date'}),
         required=True,
@@ -85,10 +91,16 @@ class RepairInvoiceForm(forms.ModelForm):
         ]
         widgets = {
             'vehicle_number': forms.TextInput(attrs={'placeholder': 'e.g. KDC 123A'}),
-            'issues': forms.Textarea(attrs={'placeholder': 'Describe issues and estimated costs...eg Brake Replacement - 5000'}),
+            'issues': forms.Textarea(attrs={'placeholder': 'Describe issues and estimated costs... e.g. Brake Replacement - 5000'}),
             'total_cost': forms.NumberInput(attrs={'placeholder': 'Total cost in Ksh'}),
         }
 
+    def clean_task_unique_id(self):
+        task_unique_id = self.cleaned_data.get('task_unique_id')
+        if not task_unique_id:
+            raise forms.ValidationError("Task ID is required.")
+        return task_unique_id
+    
 class MechanicSupportForm(forms.ModelForm):
     class Meta:
         model = MechanicSupportRequest

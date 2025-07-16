@@ -3,81 +3,124 @@
 {% block title %}Task Details | Mechanics{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'mechanics/css/task_detail.css' %}">
+  <link rel="stylesheet" href="{% static 'mechanics/css/task_detail.css' %}">
 {% endblock %}
 
 {% block content %}
-
-<header class="top-nav">
-  <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
-  <div class="nav-right">
-    <span class="user-greeting">Welcome, {{ mechanic.full_name }}</span>
-    <img src="{% static 'mechanics/images/murangalogo.jpg' %}" alt="User" class="user-avatar">
-  </div>
-</header>
-
-<div class="page-header">
-  <h1 class="page-title">Task Details</h1>
-</div>
-
-<div class="card task-detail-card">
-  <div class="task-detail-header">
-    <h2>
-      {{ task.maintenance_request.vehicle.number_plate }} - {{ task.maintenance_request.vehicle.vehicle_type }}
-      <span class="task-status status-{{ task.status }}">{{ task.get_status_display }}</span>
-    </h2>
-    <div class="task-ids">
-      <p><strong>Request ID:</strong> {{ task.maintenance_request.request_id }}</p>
-      <p><strong>Unique Task ID:</strong> {{ task.unique_task_id }}</p>
+  <header class="top-nav">
+    <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
+    <div class="nav-right">
+      <span class="user-greeting">{{ greeting }}, {{ mechanic.full_name|default:mechanic.user.get_full_name|default:mechanic.user.username }}</span>
+      <img src="{% static 'managers/images/murangalogo.jpg' %}" alt="User" class="user-avatar">
     </div>
+  </header>
+
+  <div class="page-header">
+    <h1 class="page-title"><i class="fas fa-tools"></i> Task Details</h1>
+    <p class="page-subtitle">Task {{ task.unique_task_id }} for {{ task.maintenance_request.vehicle.number_plate }}</p>
   </div>
 
-  <div class="task-detail-body">
-    <div class="detail-row">
-      <div class="detail-label">Location:</div>
-      <div class="detail-value">{{ task.maintenance_request.vehicle.location }}</div>
+  {% if messages %}
+    <div class="messages">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
     </div>
-    <div class="detail-row">
-      <div class="detail-label">Priority:</div>
-      <div class="detail-value">{{ task.get_priority_display }}</div>
-    </div>
-    <div class="detail-row">
-      <div class="detail-label">Submitted At:</div>
-      <div class="detail-value">{{ task.maintenance_request.submitted_at|date:"d M Y H:i" }}</div>
-    </div>
-    <div class="detail-row">
-      <div class="detail-label">Current Progress:</div>
-      <div class="detail-value">{{ task.progress }}%</div>
-    </div>
-    <div class="detail-row">
-      <div class="detail-label">Mechanic Notes:</div>
-      <div class="detail-value">{{ task.notes|default:"No notes provided." }}</div>
-    </div>
+  {% endif %}
 
-    <div class="progress-container">
-      <div class="progress-label">
-        <span>Completion Progress</span>
-        <span>{{ task.progress }}%</span>
+  <div class="card">
+    <div class="task-details">
+      <div class="detail-row">
+        <div class="detail-label">Vehicle:</div>
+        <div class="detail-value">{{ task.maintenance_request.vehicle.number_plate }} ({{ task.maintenance_request.vehicle.vehicle_type|default:task.maintenance_request.vehicle.model }})</div>
       </div>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: {{ task.progress }}%;"></div>
+      <div class="detail-row">
+        <div class="detail-label">Status:</div>
+        <div class="detail-value"><span class="status-{{ task.status }}">{{ task.get_status_display }}</span></div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Priority:</div>
+        <div class="detail-value">{{ task.get_priority_display }}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Location:</div>
+        <div class="detail-value">{{ task.maintenance_request.vehicle.location|default:"N/A" }}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Submitted At:</div>
+        <div class="detail-value">{{ task.maintenance_request.submitted_at|date:"d M Y H:i" }}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Issues:</div>
+        <div class="detail-value">
+          <ul>
+            {% for issue in issues %}
+              <li>{{ issue.title }} (Priority: {{ issue.get_priority_display }}, Cost: Ksh {{ issue.cost_estimate|floatformat:2 }})</li>
+            {% empty %}
+              <li>No issues</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% if task.status == 'rejected' %}
+        <div class="detail-row">
+          <div class="detail-label">Rejection Reason:</div>
+          <div class="detail-value">{{ task.rejection_reason|default:"N/A" }}</div>
+        </div>
+      {% endif %}
+      <div class="detail-row">
+        <div class="detail-label">Notes:</div>
+        <div class="detail-value">{{ task.notes|default:"None" }}</div>
+      </div>
+      <div class="progress-container">
+        <div class="progress-label">
+          <span>Completion Progress</span>
+          <span>{{ task.progress }}%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: {{ task.progress }}%; background-color: #28a745;"></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="task-actions">
-    {% if task.status != 'completed' %}
-    <a href="{% url 'mechanics:update_task_progress' task.pk %}" class="btn btn-update">Update Progress</a>
-    <a href="{% url 'mechanics:complete_task' task.pk %}" class="btn btn-complete">Mark Complete</a>
+    {% if task.status == 'pending' %}
+      <div class="task-actions">
+        <form action="{% url 'mechanics:accept_task' task.pk %}" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-small">Accept Task</button>
+        </form>
+        <form action="{% url 'mechanics:reject_task' task.pk %}" method="post">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="rejection_reason">Rejection Reason</label>
+            <textarea name="rejection_reason" id="rejection_reason" class="form-control" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-danger btn-small">Reject Task</button>
+        </form>
+      </div>
     {% endif %}
-    {% if task.status == 'in_progress' or task.status == 'completed' %}
-    <a href="{% url 'mechanics:submit_invoice' task.pk %}" class="btn btn-invoice">Submit Invoice</a>
+    {% if task.status == 'in_progress' %}
+      <div class="task-actions">
+        <button class="btn btn-primary btn-small btn-update-progress"
+                data-task-id="{{ task.pk }}"
+                data-update-url="{% url 'mechanics:update_task_progress' task.pk %}">
+          Update Progress
+        </button>
+        <button class="btn btn-success btn-small btn-complete-task"
+                data-task-id="{{ task.pk }}"
+                data-complete-url="{% url 'mechanics:complete_task' task.pk %}">
+          Mark Complete
+        </button>
+      </div>
     {% endif %}
-    <a href="{% url 'mechanics:tasks' %}" class="btn btn-back">Back to Tasks</a>
+    {% if task.status in 'in_progress,completed' and not task.invoice %}
+      <div class="task-actions">
+        <a href="{% url 'mechanics:submit_invoice' task.pk %}" class="btn btn-primary btn-small">Submit Invoice</a>
+      </div>
+    {% endif %}
   </div>
-</div>
-
 {% endblock %}
+
 {% block extra_js %}
-<script src="{% static 'mechanics/js/tasks.js' %}"></script>
+  <script src="{% static 'mechanics/js/task_detail.js' %}"></script>
 {% endblock %}

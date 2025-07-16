@@ -39,6 +39,7 @@
           <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
           <option value="in_progress" {% if selected_status == 'in_progress' %}selected{% endif %}>In Progress</option>
           <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+          <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
         </select>
       </div>
       <div class="filter-group">
@@ -62,7 +63,7 @@
                   {{ task.maintenance_request.vehicle.number_plate }} - {{ task.maintenance_request.vehicle.vehicle_type|default:task.maintenance_request.vehicle.model }}
                   <span class="status-{{ task.status }}">{{ task.get_status_display }}</span>
                 </h3>
-                <div class="task-id">Request ID: #{{ task.maintenance_request.request_id }}</div>
+                <div class="task-id">Request ID: #{{ task.maintenance_request.id }}</div>
                 <div class="task-unique-id">Unique Task ID: {{ task.unique_task_id }}</div>
               </div>
               <div class="priority-{{ task.priority }}">
@@ -83,12 +84,18 @@
                 <div class="detail-label">Issues:</div>
                 <div class="detail-value">
                   {% for issue in task.maintenance_request.issues.all %}
-                    {{ issue.title }}{% if not forloop.last %}, {% endif %}
+                    {{ issue.title }} (Ksh {{ issue.cost_estimate|floatformat:2 }}){% if not forloop.last %}, {% endif %}
                   {% empty %}
                     No issues
                   {% endfor %}
                 </div>
               </div>
+              {% if task.status == 'rejected' %}
+                <div class="detail-row">
+                  <div class="detail-label">Rejection Reason:</div>
+                  <div class="detail-value">{{ task.rejection_reason|default:"N/A" }}</div>
+                </div>
+              {% endif %}
             </div>
 
             <div class="progress-container">
@@ -103,12 +110,14 @@
 
             <div class="task-actions">
               <a href="{% url 'mechanics:task_detail' task.pk %}" class="btn btn-outline btn-small">View Details</a>
-              <button class="btn btn-primary btn-small btn-update-progress"
-                      data-task-id="{{ task.pk }}"
-                      data-update-url="{% url 'mechanics:update_task_progress' task.pk %}">
-                Update Progress
-              </button>
-              {% if task.status != 'completed' %}
+              {% if task.status == 'in_progress' %}
+                <button class="btn btn-primary btn-small btn-update-progress"
+                        data-task-id="{{ task.pk }}"
+                        data-update-url="{% url 'mechanics:update_task_progress' task.pk %}">
+                  Update Progress
+                </button>
+              {% endif %}
+              {% if task.status == 'in_progress' %}
                 <button class="btn btn-success btn-small btn-complete-task"
                         data-task-id="{{ task.pk }}"
                         data-complete-url="{% url 'mechanics:complete_task' task.pk %}">

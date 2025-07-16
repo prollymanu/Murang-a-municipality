@@ -92,6 +92,7 @@ def maintenance(request):
 def request_detail(request, id):
     request_obj = get_object_or_404(MaintenanceRequest, pk=id)
     can_unapprove = False
+    rejection_reason = request_obj.assigned_task.rejection_reason if hasattr(request_obj, 'assigned_task') and request_obj.assigned_task.status == 'rejected' else None
 
     if request_obj.status == 'approved' and request_obj.approved_at:
         time_diff = timezone.now() - request_obj.approved_at
@@ -100,6 +101,7 @@ def request_detail(request, id):
     return render(request, 'managers/request_detail.html', {
         'request_obj': request_obj,
         'can_unapprove': can_unapprove,
+        'rejection_reason': rejection_reason,
         'name': request.user.get_full_name(),
         'greeting': get_greeting(),
     })
@@ -117,7 +119,6 @@ def approve_request(request, id):
             revised_cost = request.POST.get(cost_field)
             new_priority = request.POST.get(priority_field)
 
-            # Validate and update cost
             if revised_cost:
                 try:
                     issue.cost_estimate = float(revised_cost)
@@ -125,13 +126,11 @@ def approve_request(request, id):
                     messages.error(request, f"Invalid cost entered for issue '{issue.title}'.")
                     return redirect('managers:approve_request', id=id)
 
-            # Validate and update priority
             if new_priority and new_priority in dict(priority_choices):
                 issue.priority = new_priority
 
             issue.save()
 
-        # Save comment and status update
         comment = request.POST.get('comment', '').strip()
         timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
 
@@ -148,7 +147,6 @@ def approve_request(request, id):
         messages.success(request, f"Request #{req.id} has been approved.")
         return redirect('managers:maintenance')
 
-    # For GET request — show approval page
     can_unapprove = False
     if req.status == 'approved' and req.approved_at:
         delta = timezone.now() - req.approved_at
@@ -194,11 +192,11 @@ def deny_request(request, id):
 @login_required
 def assign_mechanic(request, id):
     req = get_object_or_404(MaintenanceRequest, id=id)
-    if req.status in ['denied', 'completed', 'in_progress']:
-        messages.error(request, "Request cannot be assigned.")
+    if req.status not in ['approved', 'rejected']:
+        messages.error(request, "Request must be approved or rejected to assign a mechanic.")
         return redirect('managers:maintenance')
-    if hasattr(req, 'assigned_task'):
-        messages.error(request, "Already assigned.")
+    if hasattr(req, 'assigned_task') and req.assigned_task.status not in ['rejected', 'completed']:
+        messages.error(request, "Task is already assigned and not rejected or completed.")
         return redirect('managers:maintenance')
 
     query = request.GET.get('q', '')
@@ -210,16 +208,25 @@ def assign_mechanic(request, id):
 
     if request.method == 'POST':
         mech = get_object_or_404(MechanicProfile, id=request.POST.get('mechanic_id'))
-        MechanicTask.objects.create(
-            maintenance_request=req,
-            mechanic=mech,
-            status='in_progress',
-            priority=req.issues.first().priority if req.issues.exists() else 'medium',
-            notes=f"Assigned to {mech.full_name} on {timezone.now().strftime('%Y-%m-%d %H:%M')}",
-            unique_task_id=f"T{uuid.uuid4().hex[:7].upper()}"
-        )
+        # If the task was rejected, update it; otherwise, create a new task
+        if hasattr(req, 'assigned_task') and req.assigned_task.status == 'rejected':
+            task = req.assigned_task
+            task.mechanic = mech
+            task.status = 'pending'
+            task.rejection_reason = None
+            task.notes = f"Reassigned to {mech.full_name} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+            task.save()
+        else:
+            MechanicTask.objects.create(
+                maintenance_request=req,
+                mechanic=mech,
+                status='pending',
+                priority=req.issues.first().priority if req.issues.exists() else 'medium',
+                notes=f"Assigned to {mech.full_name} on {timezone.now().strftime('%Y-%m-%d %H:%M')}",
+                unique_task_id=f"T{uuid.uuid4().hex[:7].upper()}"
+            )
         req.mechanic = mech
-        req.status = 'in_progress'
+        req.status = 'pending'
         req.last_update = f"Assigned to {mech.full_name} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
         req.save()
         messages.success(request, f"Assigned mechanic to request #{id}")
@@ -233,6 +240,7 @@ def assign_mechanic(request, id):
         "query": query,
         "page_obj": page_obj
     })
+
 
 @login_required
 def applications_view(request):

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile Management | Muranga Transport</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .main-content {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .top-nav {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+        .user-greeting {
+            margin-right: 10px;
+            font-size: 1.1em;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        .page-header {
+            margin-bottom: 20px;
+        }
+        .page-title {
+            font-size: 1.8em;
+            color: #333;
+        }
+        .page-subtitle {
+            font-size: 1.2em;
+            color: #6c757d;
+        }
+        .card {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 1em;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        p {
+            font-size: 1em;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <header class="top-nav">
+            <div class="nav-right">
+                <span class="user-greeting">{{ greeting }}, {{ name }}</span>
+                <img src="/static/mechanics/images/murangalogo.jpg" alt="User" class="user-avatar">
+            </div>
+        </header>
+
+        <div class="page-header">
+            <h1 class="page-title">Profile Management</h1>
+            <p class="page-subtitle">Manage your account roles</p>
+        </div>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="card">
+            <h2>Your Profile</h2>
+            {% if is_admin %}
+                <p>As an admin, you can register for a mechanic or driver role or access the admin panel.</p>
+                <div class="btn-group">
+                    <a href="{% url 'core:register' %}" class="btn btn-primary">Register for a Role</a>
+                    <a href="{% url 'admin:index' %}" class="btn btn-primary">Go to Admin Panel</a>
+                    <a href="{% url 'core:clear_session_and_login' %}" class="btn btn-primary">Re-login</a>
+                </div>
+            {% else %}
+                <p>If you are seeing this, it is likely your session expired or your profile broke. Just re-login for a quick fix of the issue.</p>
+                <div class="btn-group">
+                    <a href="{% url 'core:register' %}" class="btn btn-primary">Register for a Role</a>
+                    <a href="{% url 'core:clear_session_and_login' %}" class="btn btn-primary">Re-login</a>
+                </div>
+            {% endif %}
+            <p>If login fails, please contact your supervisor or the transport manager.</p>
+        </div>
+    </div>
+</body>
+</html>

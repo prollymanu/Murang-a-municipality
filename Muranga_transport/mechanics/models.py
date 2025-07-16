@@ -53,6 +53,7 @@ class MechanicTask(models.Model):
         ('pending', 'Pending'),
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'),
+        ('rejected', 'Rejected'),  
     ]
     PRIORITY_CHOICES = [
         ('low', 'Low'),
@@ -82,6 +83,7 @@ class MechanicTask(models.Model):
         default=generate_unique_task_id,
         editable=False
     )
+    rejection_reason = models.TextField(blank=True, null=True)  
 
     def __str__(self):
         return f"Task {self.unique_task_id} for {self.maintenance_request.vehicle.number_plate}"

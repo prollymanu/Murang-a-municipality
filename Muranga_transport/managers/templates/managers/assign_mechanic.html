@@ -4,7 +4,7 @@
 {% block title %}Assign Mechanic to Request #{{ request_obj.pk }} | Transport Manager{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{% static 'managers/css/styles.css' %}">
+  <link rel="stylesheet" href="{% static 'managers/css/assign_mechanic.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -20,6 +20,9 @@
     <div class="page-header">
       <h1 class="page-title"><i class="fas fa-tools"></i> Assign Mechanic to Request #{{ request_obj.pk }}</h1>
       <p class="page-subtitle">Assign a mechanic to handle the maintenance request for {{ request_obj.vehicle.number_plate }}</p>
+      {% if request_obj.assigned_task.status == 'rejected' %}
+        <p class="page-subtitle rejected-reason">Task rejected: {{ request_obj.assigned_task.rejection_reason }}</p>
+      {% endif %}
     </div>
 
     {% if messages %}
@@ -71,7 +74,7 @@
           {% if page_obj.has_other_pages %}
             <div class="pagination">
               {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline btn-small">&laquo; Previous</a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline btn-small">« Previous</a>
               {% endif %}
               {% for num in page_obj.paginator.page_range %}
                 {% if page_obj.number == num %}
@@ -81,7 +84,7 @@
                 {% endif %}
               {% endfor %}
               {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline btn-small">Next &raquo;</a>
+                <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn btn-outline btn-small">Next »</a>
               {% endif %}
             </div>
           {% endif %}

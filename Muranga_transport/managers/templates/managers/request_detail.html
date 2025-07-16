@@ -102,16 +102,14 @@
               <button type="submit" class="btn btn-primary btn-small"><i class="fas fa-check"></i> Approve</button>
             </form>
             <button class="btn btn-outline btn-small" onclick="openDenyModal()">Deny</button>
-          {% elif request_obj.status == 'approved' %}
-            {% if can_unapprove %}
-              <form action="{% url 'managers:unapprove_request' request_obj.id %}" method="post" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger btn-small"><i class="fas fa-undo-alt"></i> Unapprove</button>
-              </form>
-            {% endif %}
-            {% if not request_obj.mechanic %}
-              <a href="{% url 'managers:assign_mechanic' request_obj.id %}" class="btn btn-primary btn-small"><i class="fas fa-user-cog"></i> Assign Mechanic</a>
-            {% endif %}
+          {% elif request_obj.status in 'approved,rejected' %}
+            <a href="{% url 'managers:assign_mechanic' request_obj.id %}" class="btn btn-primary btn-small"><i class="fas fa-user-cog"></i> Assign Mechanic</a>
+          {% endif %}
+          {% if request_obj.status == 'approved' and can_unapprove %}
+            <form action="{% url 'managers:unapprove_request' request_obj.id %}" method="post" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-small"><i class="fas fa-undo-alt"></i> Unapprove</button>
+            </form>
           {% endif %}
         </div>
       </div>
@@ -151,7 +149,7 @@
             <div class="detail-label">Issue Type:</div>
             <div class="detail-value">
               {% for issue in request_obj.issues.all %}
-                {{ issue.title }}{% if not forloop.last %}, {% endif %}
+                {{ issue.title }} (Ksh {{ issue.cost_estimate|floatformat:2 }}){% if not forloop.last %}, {% endif %}
               {% empty %}
                 No issues
               {% endfor %}
@@ -171,6 +169,12 @@
               <div class="detail-value">{{ request_obj.mechanic.full_name|default:request_obj.mechanic.user.username }}</div>
             </div>
           {% endif %}
+          {% if request_obj.assigned_task.status == 'rejected' %}
+            <div class="detail-row full-width">
+              <div class="detail-label">Rejection Reason:</div>
+              <div class="detail-value">{{ request_obj.assigned_task.rejection_reason|default:"N/A" }}</div>
+            </div>
+          {% endif %}
           {% if request_obj.estimated_completion %}
             <div class="detail-row">
               <div class="detail-label">Estimated Completion:</div>
@@ -181,7 +185,7 @@
             <div class="detail-label">Estimated Cost:</div>
             <div class="detail-value">
               {% for issue in request_obj.issues.all %}
-                Ksh {{ issue.cost_estimate }}{% if not forloop.last %}, {% endif %}
+                Ksh {{ issue.cost_estimate|floatformat:2 }}{% if not forloop.last %}, {% endif %}
               {% empty %}
                 N/A
               {% endfor %}

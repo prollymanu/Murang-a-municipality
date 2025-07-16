@@ -50,6 +50,7 @@
           {% for status_value, status_display in status_choices %}
             <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>{{ status_display }}</option>
           {% endfor %}
+          <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
         </select>
       </div>
       
@@ -97,12 +98,12 @@
           </thead>
           <tbody id="requestsTableBody">
             {% for request in maintenance_requests %}
-              <tr>
+              <tr {% if request.assigned_task.status == 'rejected' %}class="rejected-task"{% endif %}>
                 <td>#{{ request.pk }}</td>
                 <td>{{ request.vehicle }}</td>
                 <td>
                   {% for issue in request.issues.all %}
-                    {{ issue.title }}{% if not forloop.last %}, {% endif %}
+                    {{ issue.title }} (Ksh {{ issue.cost_estimate|floatformat:2 }}){% if not forloop.last %}, {% endif %}
                   {% empty %}
                     No issues
                   {% endfor %}
@@ -125,7 +126,7 @@
                     <button class="btn btn-outline btn-small" onclick="openDenyModal({{ request.id }})">
                       <i class="fas fa-times"></i> Deny
                     </button>
-                  {% elif request.status == 'approved' and not request.mechanic %}
+                  {% elif request.status in 'approved,rejected' %}
                     <a href="{% url 'managers:assign_mechanic' request.id %}" class="btn btn-primary btn-small">
                       <i class="fas fa-user-cog"></i> Assign Mechanic
                     </a>

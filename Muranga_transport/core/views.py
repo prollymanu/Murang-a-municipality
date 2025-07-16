@@ -6,13 +6,17 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 from .models import RegistrationRequest
 import re
+from django.contrib.auth import get_user
+from django.contrib.auth.decorators import login_required
 from drivers.models import KENYA_LICENSE_CLASSES
+from mechanics.models import MechanicProfile
+from drivers.models import DriverProfile
+from django.utils import timezone
 
 User = get_user_model()
 
 MAX_ATTEMPTS = 5
 LOCKOUT_TIME = 5 * 60  # 5 minutes
-
 
 def login_view(request):
     if request.method == 'POST':
@@ -60,7 +64,6 @@ def login_view(request):
         })
 
     return render(request, 'core/login.html')
-
 
 def register_view(request):
     if request.method == 'POST':
@@ -174,6 +177,41 @@ def register_view(request):
 def forgot_password_view(request):
     return render(request, 'core/forgot_password.html')
 
+@login_required
+def profile_management(request):
+    user = get_user(request)
+    now = timezone.localtime(timezone.now())
+    greeting = (
+        "Good morning" if 5 <= now.hour < 12 else
+        "Good afternoon" if 12 <= now.hour < 17 else
+        "Good evening"
+    )
+
+    has_mechanic_profile = MechanicProfile.objects.filter(user=user).exists()
+    has_driver_profile = DriverProfile.objects.filter(user=user).exists()
+
+    if has_mechanic_profile:
+        messages.info(request, "You have a mechanic profile. Redirecting to your mechanic dashboard.")
+        return redirect('mechanics:dashboard')
+    elif has_driver_profile:
+        messages.info(request, "You have a driver profile. Redirecting to your driver dashboard.")
+        return redirect('drivers:dashboard')
+    else:
+        if user.is_staff or user.is_superuser:
+            messages.info(request, "Admin: You don't have a mechanic or driver profile. Register for a role or access the admin panel.")
+        else:
+            messages.error(request, "If you are seeing this, it is likely your session expired or your profile broke. Just re-login for a quick fix of the issue.")
+        return render(request, 'core/profile_management.html', {
+            'greeting': greeting,
+            'name': user.get_full_name() or user.username,
+            'is_admin': user.is_staff or user.is_superuser,
+        })
+
+@login_required
+def clear_session_and_login(request):
+    logout(request)
+    messages.info(request, "Session cleared. Please log in again.")
+    return redirect('core:login')
 
 def logout_view(request):
     logout(request)

@@ -5,7 +5,8 @@ from . import views
 app_name = 'core'
 
 urlpatterns = [
-    path('', views.login_view, name='login'),
+    path('', views.login_view, name='home'),
+    path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('forgot_password/', auth_views.PasswordResetView.as_view(
         template_name='core/forgot_password.html'
@@ -20,4 +21,6 @@ urlpatterns = [
         template_name='core/password_reset_complete.html'
     ), name='password_reset_complete'),
     path('logout/', views.logout_view, name='logout'),
+    path('profile/', views.profile_management, name='profile_management'),
+    path('re-login/', views.clear_session_and_login, name='clear_session_and_login'),
 ]
