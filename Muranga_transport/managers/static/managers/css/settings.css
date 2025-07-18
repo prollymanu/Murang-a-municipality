@@ -1,49 +1,382 @@
-/* Additional styles for API key buttons */
-.api-key-actions {
+/* settings.css - Modern Settings Page */
+.settings-container {
+    display: grid;
+    grid-template-columns: minmax(200px, 250px) 1fr;
+    gap: 2rem;
+    margin-top: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .settings-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Settings Navigation */
+.settings-nav {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 1rem 0;
+    height: fit-content;
+}
+
+.settings-nav__header {
+    padding: 0 1.25rem 1rem;
+    border-bottom: 1px solid var(--medium-gray);
+    margin-bottom: 0.5rem;
+}
+
+.settings-nav__title {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--dark-gray);
+    font-weight: 600;
+}
+
+.settings-nav__list {
+    list-style: none;
+}
+
+.settings-nav__item {
+    margin: 0.25rem 0;
+}
+
+.settings-nav__link {
     display: flex;
-    gap: 8px;
-    margin-top: 8px;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    color: var(--secondary-color);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+    font-weight: 500;
 }
 
-.api-key-actions .btn {
-    width: auto; /* or specific width like 120px */
-    min-width: 100px; /* optional minimum width */
+.settings-nav__link:hover {
+    background: rgba(46, 125, 50, 0.05);
+    color: var(--primary-dark);
 }
 
-/* Modal footer button alignment */
-.modal-footer {
+.settings-nav__link.active {
+    background: rgba(46, 125, 50, 0.08);
+    border-left-color: var(--primary-color);
+    color: var(--primary-dark);
+}
+
+.settings-nav__icon {
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--dark-gray);
+}
+
+.settings-nav__link.active .settings-nav__icon {
+    color: var(--primary-color);
+}
+
+/* Settings Content */
+.settings-content {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+}
+
+.settings-section {
+    display: none;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.settings-section.active {
+    display: block;
+}
+
+/* Profile Section */
+.profile-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2rem;
+    align-items: center;
+    margin-bottom: 2.5rem;
+}
+
+@media (max-width: 640px) {
+    .profile-card {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--primary-light);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-info__name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 0.25rem;
+}
+
+.profile-info__role {
+    color: var(--dark-gray);
+    font-size: 0.9375rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: var(--light-gray);
+    border-radius: 4px;
+}
+
+.profile-info__meta {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--dark-gray);
+}
+
+.profile-info__meta-item {
+    display: flex;
+    align-items: center;
+}
+
+.profile-info__meta-icon {
+    margin-right: 0.5rem;
+    color: var(--primary-color);
+}
+
+/* Form Styles */
+.settings-form {
+    max-width: 600px;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--secondary-color);
+    font-size: 0.9375rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--medium-gray);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    transition: all 0.2s ease;
+    background: var(--light-gray);
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.15);
+    outline: none;
+    background: var(--white);
+}
+
+.form-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
-    padding-top: 20px;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
     border-top: 1px solid var(--medium-gray);
-    margin-top: 20px;
 }
 
-/* Close button styling */
-.close-modal {
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: var(--dark-gray);
+/* File Upload */
+.file-upload-wrapper {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.file-upload-input {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
     cursor: pointer;
-    padding: 5px;
-    transition: all 0.3s ease;
-    line-height: 1;
 }
 
-.close-modal:hover {
-    color: var(--danger-color);
-    transform: rotate(90deg);
-}
-
-/* Action buttons in tables */
-.action-buttons {
+.file-upload-label {
     display: flex;
-    gap: 5px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    border: 2px dashed var(--medium-gray);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.btn-icon {
-    padding: 5px 8px;
-    min-width: 30px;
+.file-upload-label:hover {
+    border-color: var(--primary-color);
+    background: rgba(46, 125, 50, 0.03);
+}
+
+.file-upload-icon {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.file-upload-text {
+    font-size: 0.9375rem;
+    color: var(--secondary-color);
+    margin-bottom: 0.25rem;
+}
+
+.file-upload-hint {
+    font-size: 0.8125rem;
+    color: var(--dark-gray);
+}
+
+/* Alerts */
+.alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9375rem;
+}
+
+.alert-danger {
+    background: rgba(211, 47, 47, 0.08);
+    border-left: 4px solid var(--danger-color);
+    color: var(--danger-color);
+}
+
+.alert-danger ul {
+    margin: 0.5rem 0 0 1rem;
+    padding-left: 0;
+}
+
+.alert-danger li {
+    margin-bottom: 0.25rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Security Section */
+.security-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.security-item:last-child {
+    border-bottom: none;
+}
+
+.security-info {
+    flex: 1;
+}
+
+.security-title {
+    font-weight: 500;
+    color: var(--black);
+    margin-bottom: 0.25rem;
+}
+
+.security-description {
+    font-size: 0.875rem;
+    color: var(--dark-gray);
+}
+
+.security-action .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+/* Password Strength */
+.password-strength {
+    margin-top: 0.5rem;
+    height: 4px;
+    background: var(--medium-gray);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.password-strength-bar {
+    height: 100%;
+    width: 0;
+    transition: width 0.3s ease;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .settings-content {
+        padding: 1.5rem;
+    }
+    
+    .profile-info__meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+    }
+    
+    .security-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .security-action {
+        align-self: flex-end;
+    }
+}
+
+/* Buttons */
+.btn {
+    padding: 0.75rem 1.5rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(46, 125, 50, 0.2);
+}
+
+.btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(46, 125, 50, 0.3);
 }

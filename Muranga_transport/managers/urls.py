@@ -7,15 +7,18 @@ app_name = 'managers'
 urlpatterns = [
     # Dashboard & General
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('job-management/', views.jobs, name='job_management'),
     path('reports/', views.reports, name='reports'),
     path('reports/export/', views.export_reports, name='export_reports'),
     path('reports/<str:report_type>/<str:report_id>/', views.report_details, name='report_details'),
     path('settings/', views.settings, name='settings'),
-    path('support/', views.support, name='support_requests'),
     path('drivers/', views.drivers, name='drivers'),
     path('assignments/', views.assignments, name='assignments'),
 
+    # job management
+    path('job-management/', views.job_management, name='job_management'),
+    path('mechanic-tasks/', views.mechanic_tasks, name='mechanic_tasks'),
+
+    
     # Maintenance Requests
     path('maintenance/', views.maintenance, name='maintenance'),
     path('maintenance/<int:id>/', views.request_detail, name='request_detail'),
@@ -42,4 +45,9 @@ urlpatterns = [
     path('invoices/<int:invoice_id>/unapprove/', views.unapprove_invoice, name='unapprove_invoice'),
     path('invoices/<int:invoice_id>/unreject/', views.unreject_invoice, name='unreject_invoice'),
     path('invoices/export/<str:format>/', views.export_invoices, name='export_invoices'),
+
+    # support 
+    path('support/', views.support, name='support_requests'),
+    path('support/<str:request_type>/<int:request_id>/respond/', views.add_response, name='add_response'),
+    path('support/<str:request_type>/<int:request_id>/status/', views.update_status, name='update_status'),
 ]

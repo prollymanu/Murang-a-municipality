@@ -7,13 +7,14 @@ from django.core.paginator import Paginator
 from django.db.models import Sum
 from django.urls import reverse
 from django.contrib.auth import get_user
+from core.utils import get_greeting
 import json
 import io
 import openpyxl
 from reportlab.pdfgen import canvas
 from .models import MechanicProfile, MechanicTask, RepairInvoice, RepairInvoicePhoto, MechanicSupportRequest, MechanicSupportAttachment
 from drivers.models import MaintenanceRequest, Vehicle
-from .forms import MechanicProfileForm, RepairInvoiceForm, MechanicSupportForm
+from .forms import MechanicProfileForm, RepairInvoiceForm, MechanicSupportForm, TaskInvoiceForm
 import logging
 
 # Set up logging
@@ -419,14 +420,7 @@ def notifications(request):
 
 @login_required
 def tasks(request):
-    user = get_user(request)
-    now = timezone.localtime(timezone.now())
-    greeting = (
-        "Good morning" if 5 <= now.hour < 12 else
-        "Good afternoon" if 12 <= now.hour < 17 else
-        "Good evening"
-    )
-
+    user = request.user
     try:
         mechanic = MechanicProfile.objects.get(user=user)
         tasks = MechanicTask.objects.filter(mechanic=mechanic).select_related('maintenance_request__vehicle').order_by('-assigned_at')
@@ -443,7 +437,7 @@ def tasks(request):
             'tasks': tasks,
             'selected_status': status,
             'selected_priority': priority,
-            'greeting': greeting,
+            'greeting': get_greeting(),
         })
     except MechanicProfile.DoesNotExist:
         logger.warning(f"No MechanicProfile for user {user.username} (ID: {user.id}, is_staff: {user.is_staff}, is_superuser: {user.is_superuser})")
@@ -455,14 +449,7 @@ def tasks(request):
 
 @login_required
 def task_detail(request, pk):
-    user = get_user(request)
-    now = timezone.localtime(timezone.now())
-    greeting = (
-        "Good morning" if 5 <= now.hour < 12 else
-        "Good afternoon" if 12 <= now.hour < 17 else
-        "Good evening"
-    )
-
+    user = request.user
     try:
         mechanic = MechanicProfile.objects.get(user=user)
         task = MechanicTask.objects.get(pk=pk, mechanic=mechanic)
@@ -471,7 +458,7 @@ def task_detail(request, pk):
             'mechanic': mechanic,
             'task': task,
             'issues': issues,
-            'greeting': greeting,
+            'greeting': get_greeting(),
         })
     except (MechanicProfile.DoesNotExist, MechanicTask.DoesNotExist):
         logger.warning(f"No MechanicProfile or MechanicTask for user {user.username} (ID: {user.id}, is_staff: {user.is_staff}, is_superuser: {user.is_superuser})")
@@ -483,14 +470,7 @@ def task_detail(request, pk):
 
 @login_required
 def accept_task(request, pk):
-    user = get_user(request)
-    now = timezone.localtime(timezone.now())
-    greeting = (
-        "Good morning" if 5 <= now.hour < 12 else
-        "Good afternoon" if 12 <= now.hour < 17 else
-        "Good evening"
-    )
-
+    user = request.user
     try:
         mechanic = MechanicProfile.objects.get(user=user)
         task = MechanicTask.objects.get(pk=pk, mechanic=mechanic)
@@ -500,6 +480,7 @@ def accept_task(request, pk):
             return redirect('mechanics:task_detail', pk=pk)
         
         task.status = 'in_progress'
+        task.progress = 0  # Start progress at 0
         task.notes = f"Accepted by {mechanic.full_name or mechanic.user.username} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
         task.save()
         
@@ -519,14 +500,7 @@ def accept_task(request, pk):
 
 @login_required
 def reject_task(request, pk):
-    user = get_user(request)
-    now = timezone.localtime(timezone.now())
-    greeting = (
-        "Good morning" if 5 <= now.hour < 12 else
-        "Good afternoon" if 12 <= now.hour < 17 else
-        "Good evening"
-    )
-
+    user = request.user
     try:
         mechanic = MechanicProfile.objects.get(user=user)
         task = MechanicTask.objects.get(pk=pk, mechanic=mechanic)
@@ -539,7 +513,7 @@ def reject_task(request, pk):
             reason = request.POST.get('rejection_reason', '').strip()
             if not reason:
                 messages.error(request, "A rejection reason is required.")
-            return redirect('mechanics:task_detail', pk=pk)
+                return redirect('mechanics:task_detail', pk=pk)
             
             task.status = 'rejected'
             task.rejection_reason = reason
@@ -558,7 +532,7 @@ def reject_task(request, pk):
             'mechanic': mechanic,
             'task': task,
             'issues': task.maintenance_request.issues.all(),
-            'greeting': greeting,
+            'greeting': get_greeting(),
         })
     except (MechanicProfile.DoesNotExist, MechanicTask.DoesNotExist):
         logger.warning(f"No MechanicProfile or MechanicTask for user {user.username} (ID: {user.id}, is_staff: {user.is_staff}, is_superuser: {user.is_superuser})")
@@ -570,14 +544,7 @@ def reject_task(request, pk):
 
 @login_required
 def update_task_progress(request, pk):
-    user = get_user(request)
-    now = timezone.localtime(timezone.now())
-    greeting = (
-        "Good morning" if 5 <= now.hour < 12 else
-        "Good afternoon" if 12 <= now.hour < 17 else
-        "Good evening"
-    )
-
+    user = request.user
     try:
         mechanic = MechanicProfile.objects.get(user=user)
         task = MechanicTask.objects.get(pk=pk, mechanic=mechanic)
@@ -615,14 +582,7 @@ def update_task_progress(request, pk):
 
 @login_required
 def complete_task(request, pk):
-    user = get_user(request)
-    now = timezone.localtime(timezone.now())
-    greeting = (
-        "Good morning" if 5 <= now.hour < 12 else
-        "Good afternoon" if 12 <= now.hour < 17 else
-        "Good evening"
-    )
-
+    user = request.user
     try:
         mechanic = MechanicProfile.objects.get(user=user)
         task = MechanicTask.objects.get(pk=pk, mechanic=mechanic)
@@ -648,7 +608,68 @@ def complete_task(request, pk):
         else:
             messages.error(request, "If you are seeing this, it is likely your session expired or your profile broke. Just re-login for a quick fix of the issue.")
         return redirect('core:profile_management')
+# ✅ 1. Submit via repair_invoice.html (manual entry of Task ID)
+@login_required
+def submit_invoice_manual(request):
+    user = get_user(request)
+    now = timezone.localtime(timezone.now())
+    greeting = (
+        "Good morning" if 5 <= now.hour < 12 else
+        "Good afternoon" if 12 <= now.hour < 17 else
+        "Good evening"
+    )
 
+    try:
+        mechanic = MechanicProfile.objects.get(user=user)
+
+        if request.method == 'POST':
+            form = RepairInvoiceForm(request.POST, request.FILES)
+            if form.is_valid():
+                task_id = form.cleaned_data['task_unique_id']
+                try:
+                    task = MechanicTask.objects.get(unique_task_id=task_id, mechanic=mechanic)
+                except MechanicTask.DoesNotExist:
+                    messages.error(request, "Invalid Task ID or the task does not belong to you.")
+                    return redirect('mechanics:submit_invoice_manual')
+
+                if task.status != 'completed':
+                    messages.error(request, "Task must be completed before submitting an invoice.")
+                    return redirect('mechanics:submit_invoice_manual')
+
+                if hasattr(task, 'invoice') and task.invoice.status != 'rejected':
+                    messages.error(request, "An invoice for this task already exists and is not rejected.")
+                    return redirect('mechanics:submit_invoice_manual')
+
+                invoice = form.save(commit=False)
+                invoice.mechanic_task = task
+                invoice.save()
+
+                for file in request.FILES.getlist('photos'):
+                    if file.size > 5 * 1024 * 1024:
+                        invoice.delete()
+                        messages.error(request, f"File {file.name} exceeds 5MB limit.")
+                        return redirect('mechanics:submit_invoice_manual')
+                    RepairInvoicePhoto.objects.create(invoice=invoice, image=file)
+
+                messages.success(request, f"Invoice for task {task.unique_task_id} submitted successfully!")
+                return redirect('mechanics:repair_invoices')
+            else:
+                messages.error(request, "Please correct the errors in the form.")
+        else:
+            form = RepairInvoiceForm()
+
+        return render(request, 'mechanics/repair_invoice.html', {
+            'mechanic': mechanic,
+            'form': form,
+            'greeting': greeting,
+        })
+
+    except MechanicProfile.DoesNotExist:
+        messages.error(request, "You don't have a mechanic profile.")
+        return redirect('core:profile_management')
+
+
+# ✅ 2. Submit via tasks page (auto-read Task ID from DB)
 @login_required
 def submit_invoice(request, task_id):
     user = get_user(request)
@@ -672,11 +693,12 @@ def submit_invoice(request, task_id):
             return redirect('mechanics:tasks')
 
         if request.method == 'POST':
-            form = RepairInvoiceForm(request.POST, request.FILES)
+            form = TaskInvoiceForm(request.POST, request.FILES)
             if form.is_valid():
                 invoice = form.save(commit=False)
                 invoice.mechanic_task = task
                 invoice.task_unique_id = task.unique_task_id
+                invoice.vehicle_number = task.maintenance_request.vehicle.number_plate
                 invoice.save()
 
                 for file in request.FILES.getlist('photos'):
@@ -695,9 +717,8 @@ def submit_invoice(request, task_id):
                 'vehicle_number': task.maintenance_request.vehicle.number_plate,
                 'issues': ', '.join(f"{issue.title} (Ksh {issue.cost_estimate})" for issue in task.maintenance_request.issues.all()),
                 'total_cost': sum(issue.cost_estimate for issue in task.maintenance_request.issues.all()),
-                'task_unique_id': task.unique_task_id,
             }
-            form = RepairInvoiceForm(initial=initial_data)
+            form = TaskInvoiceForm(initial=initial_data)
 
         return render(request, 'mechanics/submit_invoice.html', {
             'mechanic': mechanic,
@@ -705,12 +726,10 @@ def submit_invoice(request, task_id):
             'form': form,
             'greeting': greeting,
         })
+
     except (MechanicProfile.DoesNotExist, MechanicTask.DoesNotExist):
-        logger.warning(f"No MechanicProfile or MechanicTask for user {user.username} (ID: {user.id}, is_staff: {user.is_staff}, is_superuser: {user.is_superuser})")
-        if user.is_staff or user.is_superuser:
-            messages.info(request, "Admin: You don't have a mechanic profile. Register for a role or access the admin panel.")
-        else:
-            messages.error(request, "If you are seeing this, it is likely your session expired or your profile broke. Just re-login for a quick fix of the issue.")
+        logger.warning(f"No MechanicProfile or MechanicTask for user {user.username}")
+        messages.error(request, "Something went wrong. Please re-login.")
         return redirect('core:profile_management')
 
 @login_required

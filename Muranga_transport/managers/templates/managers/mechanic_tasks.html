@@ -1,0 +1,107 @@
+{% extends "managers/base.html" %}
+{% load static %}
+
+{% block title %}Mechanic Tasks | Transport Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'managers/css/mechanic_tasks.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <header class="top-nav">
+        <button class="sidebar-toggle" type="button" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="nav-right">
+            <span class="user-greeting">
+                {{ greeting }}, {{ user.get_full_name|default:user.username|default:"Transport Manager" }}
+            </span>
+            <img src="{% if user.manager_profile.photo %}{{ user.manager_profile.photo.url }}{% else %}{% static 'managers/images/murangalogo.jpg' %}{% endif %}" alt="User Avatar" class="user-avatar">
+        </div>
+    </header>
+
+    <main class="dashboard-content">
+        <h1 class="page-title"><i class="fas fa-wrench"></i> Mechanic Tasks</h1>
+
+        <div class="search-filter">
+            <form method="get" class="search-form">
+                <div class="form-group">
+                    <input type="text" name="q" class="form-control" placeholder="Search tasks by title, description, vehicle, or mechanic" value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                </div>
+                <div class="form-group">
+                    <select name="status" class="form-control" onchange="this.form.submit()">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+                        <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
+                        <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        {% if page_obj %}
+            <div class="task-list">
+                {% for task in page_obj %}
+                    <div class="task-card">
+                        <div class="task-header">
+                            <h3 class="task-title">{{ task.issue_title }}</h3>
+                            <span class="task-status status-{{ task.status|lower|replace:" ","-" }}">{{ task.status }}</span>
+                        </div>
+                        <div class="task-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Vehicle</div>
+                                <div class="detail-value">{{ task.vehicle_number_plate }}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Mechanic</div>
+                                <div class="detail-value">{{ task.mechanic.user.get_full_name|default:task.mechanic.user.username }}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Estimated Cost</div>
+                                <div class="detail-value">KES {{ task.estimated_cost }}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Created</div>
+                                <div class="detail-value">{{ task.created_at|date:"M d, Y, H:i" }}</div>
+                            </div>
+                            <div class="detail-item full-width">
+                                <div class="detail-label">Issue Description</div>
+                                <div class="detail-value">{{ task.issue_description }}</div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="pagination">
+                <span class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1&q={{ search_query }}&status={{ status_filter }}">&laquo; First</a>
+                        <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&status={{ status_filter }}">Previous</a>
+                    {% endif %}
+                    <span class="current">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&status={{ status_filter }}">Next</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}&q={{ search_query }}&status={{ status_filter }}">Last &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-wrench fa-3x"></i>
+                <h3>No tasks found</h3>
+                <p>Create a new task in the Task Management section.</p>
+                <a href="{% url 'managers:job_management' %}" class="btn btn-primary">Go to Task Management</a>
+            </div>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'managers/js/mechanic_tasks.js' %}"></script>
+{% endblock %}

@@ -1,371 +1,219 @@
 {% extends "managers/base.html" %}
 {% load static %}
 
-{% block title %}Job Management | Transport Manager{% endblock %}
+{% block title %}Task Management | Transport Manager{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{% static 'managers/css/job_management.css' %}">
+<link rel="stylesheet" href="{% static 'managers/css/job_management.css' %}">
 {% endblock %}
 
 {% block content %}
-    <!-- Main Content -->
-    <div class="main-content">
-      <!-- Top Navigation Bar -->
-      <header class="top-nav">
-        <button class="sidebar-toggle">
-          <i class="fas fa-bars"></i>
+<div class="main-content">
+    <header class="top-nav">
+        <button class="sidebar-toggle" type="button" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
         </button>
         <div class="nav-right">
-          <span class="user-greeting">
-            {% if user %}
-              Welcome, {{ user.first_name|default:"Admin" }}
-            {% else %}
-              Welcome, Admin
-            {% endif %}
-          </span>
-          <img src="{% static 'managers/images/murangalogo.jpg' %}" alt="User" class="user-avatar">
-        </div>
-      </header>
-
-      <!-- Dashboard Content -->
-      <main class="dashboard-content">
-        <h1 class="page-title"><i class="fas fa-tasks"></i> Job Management</h1>
-        
-        <div class="management-tabs">
-          <button class="tab-btn active" data-tab="create-job">Create Mechanic Job</button>
-          <button class="tab-btn" data-tab="assign-driver">Assign Driver</button>
-        </div>
-        
-        <!-- Create Job Tab -->
-        <div id="create-job" class="tab-content active">
-          <div class="card">
-            <form id="jobCreationForm">
-              <div class="assignment-form">
-                <div class="form-section">
-                  <h3>Basic Information</h3>
-                  <div class="form-group">
-                    <label for="job-title">Job Title</label>
-                    <input type="text" id="job-title" class="form-control" placeholder="Enter job title" required>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label for="job-type">Job Type</label>
-                    <select id="job-type" class="form-control" required>
-                      <option value="">Select job type</option>
-                      <option value="repair">Repair</option>
-                      <option value="maintenance">Maintenance</option>
-                      <option value="inspection">Inspection</option>
-                      <option value="overhaul">Overhaul</option>
-                      <option value="emergency">Emergency</option>
-                    </select>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label for="vehicle">Vehicle</label>
-                    <select id="vehicle" class="form-control" required>
-                      <option value="">Select vehicle</option>
-                      <option value="KAB 123X">KAB 123X - Toyota Land Cruiser</option>
-                      <option value="KAC 456D">KAC 456D - Toyota Hiace</option>
-                      <option value="KAD 789F">KAD 789F - Isuzu NPR</option>
-                      <option value="KAE 012G">KAE 012G - Mitsubishi L200</option>
-                    </select>
-                  </div>
+            <div class="user-info">
+                <span class="user-greeting">
+                    {{ greeting }}, {{ user.get_full_name|default:user.username|default:"Transport Manager" }}
+                </span>
+                <div class="county-branding">
+                    <img src="{% static 'managers/images/murangalogo.jpg' %}" alt="Murang'a County Logo">
                 </div>
-                
-                <div class="form-section">
-                  <h3>Priority & Deadline</h3>
-                  <div class="form-group">
-                    <label>Priority Level</label>
-                    <div class="priority-selector">
-                      <button type="button" class="priority-btn priority-low" data-priority="low">Low</button>
-                      <button type="button" class="priority-btn priority-medium" data-priority="medium">Medium</button>
-                      <button type="button" class="priority-btn priority-high" data-priority="high">High</button>
-                    </div>
-                    <input type="hidden" id="priority" required>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label for="deadline">Deadline</hltml>
-                    <input type="date" id="deadline" class="form-control" required>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label for="estimated-time">Estimated Time (hours)</label>
-                    <input type="number" id="estimated-time" class="form-control" min="1" required>
-                  </div>
-                </div>
-                
-                <div class="form-section full-width">
-                  <h3>Job Description</h3>
-                  <div class="form-group">
-                    <textarea id="job-description" class="form-control" rows="4" placeholder="Describe the job in detail..." required></textarea>
-                  </div>
-                </div>
-                
-                <div class="form-section">
-                  <h3>Required Skills</h3>
-                  <div class="skills-selector">
-                    <span class="skill-tag" data-skill="engine">Engine Repair</span>
-                    <span class="skill-tag" data-skill="electrical">Electrical Systems</span>
-                    <span class="skill-tag" data-skill="transmission">Transmission</span>
-                    <span class="skill-tag" data-skill="brakes">Brakes</span>
-                    <span class="skill-tag" data-skill="suspension">Suspension</span>
-                    <span class="skill-tag" data-skill="diagnostics">Diagnostics</span>
-                    <span class="skill-tag" data-skill="welding">Welding</span>
-                    <span class="skill-tag" data-skill="ac">AC Systems</span>
-                  </div>
-                  <input type="hidden" id="required-skills">
-                </div>
-                
-                <div class="form-section">
-                  <h3>Location</h3>
-                  <div class="form-group">
-                    <select id="location" class="form-control" required>
-                      <option value="">Select location</option>
-                      <option value="central-garage">Central Garage</option>
-                      <option value="main-depot">Main Depot</option>
-                      <option value="field-service">Field Service</option>
-                      <option value="hospital-garage">Hospital Garage</option>
-                    </select>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label for="supervisor">Supervising Mechanic</label>
-                    <select id="supervisor" class="form-control">
-                      <option value="">Select supervisor (optional)</option>
-                      <option value="m001">James Mwangi (Senior Mechanic)</option>
-                      <option value="m002">Peter Kamau (Lead Technician)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="form-actions">
-                <button type="reset" class="btn btn-secondary">
-                  <i class="fas fa-times"></i> Cancel
-                </button>
-                <button type="submit" class="btn btn-primary">
-                  <i class="fas fa-save"></i> Create Job
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-        
-        <!-- Assign Driver Tab -->
-        <div id="assign-driver" class="tab-content">
-          <div class="card">
-            <h2>Create New Driver Assignment</h2>
-            <form id="assignmentForm" class="assignment-form">
-              <div class="form-section">
-                <h3>Assignment Details</h3>
-                <div class="form-group">
-                  <label for="assignment-title">Assignment Title</label>
-                  <input type="text" id="assignment-title" class="form-control" placeholder="Enter assignment title" required>
-                </div>
-                
-                <div class="form-group">
-                  <label for="assignment-date">Date & Time</label>
-                  <input type="datetime-local" id="assignment-date" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                  <label for="assignment-destination">Destination</label>
-                  <input type="text" id="assignment-destination" class="form-control" placeholder="Enter destination" required>
-                </div>
-              </div>
-              
-              <div class="form-section">
-                <h3>Driver & Vehicle</h3>
-                <div class="form-group">
-                  <label for="driver-select">Assign Driver</label>
-                  <select id="driver-select" class="driver-select" required>
-                    <option value="">Select driver</option>
-                    <option value="d001">John Kamau</option>
-                    <option value="d002">Peter Mwangi</option>
-                    <option value="d003">James Ochieng</option>
-                    <option value="d004">David Njoroge</option>
-                  </select>
-                </div>
-                
-                <div class="form-group">
-                  <label for="vehicle-select">Assign Vehicle</label>
-                  <select id="vehicle-select" class="form-control" required>
-                    <option value="">Select vehicle</option>
-                    <option value="KAB 123X">Toyota Land Cruiser (KAB 123X)</option>
-                    <option value="KAC 456D">Toyota Hiace (KAC 456D)</option>
-                    <option value="KAD 789F">Isuzu NPR (KAD 789F)</option>
-                    <option value="KAE 012G">Mitsubishi L200 (KAE 012G)</option>
-                  </select>
-                </div>
-                
-                <div class="driver-details" id="driver-details">
-                  <img src="{% static 'managers/images/driver-avatar.jpg' %}" alt="Driver" class="driver-avatar">
-                  <div class="driver-info">
-                    <h4>Driver Name</h4>
-                    <p>License: ABC12345</p>
-                    <p>Phone: +254 712 345 678</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="form-section full-width">
-                <h3>Additional Information</h3>
-                <div class="assignment-details">
-                  <div class="form-group">
-                    <label for="passengers">Passengers</label>
-                    <input type="text" id="passengers" class="form-control" placeholder="Enter passenger details">
-                  </div>
-                  
-                  <div class="form-group">
-                    <label for="estimated-distance">Estimated Distance (km)</label>
-                    <input type="number" id="estimated-distance" class="form-control" placeholder="Enter distance">
-                  </div>
-                  
-                  <div class="form-group">
-                    <label for="special-instructions">Special Instructions</label>
-                    <input type="text" id="special-instructions" class="form-control" placeholder="Any special instructions">
-                  </div>
-                </div>
-              </div>
-              
-              <div class="form-actions full-width">
-                <button type="reset" class="btn btn-secondary">
-                  <i class="fas fa-times"></i> Cancel
-                </button>
-                <button type="submit" class="btn btn-primary">
-                  <i class="fas fa-user-check"></i> Assign Driver
-                </button>
-              </div>
-            </form>
-            
-            <h2>Current Assignments</h2>
-            <div class="assignment-list">
-              <!-- Assignment 1 -->
-              <div class="assignment-card">
-                <div class="assignment-header">
-                  <h3 class="assignment-title">County Executive Transport - Nairobi Meeting</h3>
-                  <span class="assignment-status status-upcoming">Upcoming</span>
-                </div>
-                <div class="assignment-details">
-                  <div class="detail-item">
-                    <div class="detail-label">Date & Time</div>
-                    <div class="detail-value">June 15, 2025 | 7:00 AM</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Assigned Driver</div>
-                    <div class="detail-value">John Kamau (License: KJA123456)</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Vehicle Assigned</div>
-                    <div class="detail-value">Toyota Land Cruiser (KAB 123X)</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Passengers</div>
-                    <div class="detail-value">County Executive + 3 officials</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Destination</div>
-                    <div class="detail-value">Nairobi, State House</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Special Instructions</div>
-                    <div class="detail-value">Formal attire required</div>
-                  </div>
-                </div>
-                <div class="form-actions">
-                  <button type="button" class="btn btn-outline edit-assignment-btn" data-assignment-id="1">
-                    <i class="fas fa-edit"></i> Edit Assignment
-                  </button>
-                  <button type="button" class="btn btn-danger cancel-assignment-btn" data-assignment-id="1">
-                    <i class="fas fa-trash"></i> Cancel Assignment
-                  </button>
-                </div>
-              </div>
-              
-              <!-- Assignment 2 -->
-              <div class="assignment-card">
-                <div class="assignment-header">
-                  <h3 class="assignment-title">Water Department Field Inspection</h3>
-                  <span class="assignment-status status-in-progress">In Progress</span>
-                </div>
-                <div class="assignment-details">
-                  <div class="detail-item">
-                    <div class="detail-label">Date & Time</div>
-                    <div class="detail-value">June 14, 2025 | 8:30 AM</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Assigned Driver</div>
-                    <div class="detail-value">Peter Mwangi (License: PMW789012)</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Vehicle Assigned</div>
-                    <div class="detail-value">Toyota Hiace (KAC 456D)</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Passengers</div>
-                    <div class="detail-value">5 Water Department engineers</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Current Location</div>
-                    <div class="detail-value">Gatanga Water Treatment Plant</div>
-                  </div>
-                </div>
-                <div class="form-actions">
-                  <button type="button" class="btn btn-outline track-location-btn" data-assignment-id="2">
-                    <i class="fas fa-map-marker-alt"></i> Track Location
-                  </button>
-                  <button type="button" class="btn btn-success complete-assignment-btn" data-assignment-id="2">
-                    <i class="fas fa-flag-checkered"></i> Mark Complete
-                  </button>
-                </div>
-              </div>
-              
-              <!-- Assignment 3 -->
-              <div class="assignment-card">
-                <div class="assignment-header">
-                  <h3 class="assignment-title">Daily Staff Shuttle - Murang'a to Kenol</h3>
-                  <span class="assignment-status status-completed">Completed</span>
-                </div>
-                <div class="assignment-details">
-                  <div class="detail-item">
-                    <div class="detail-label">Date & Time</div>
-                    <div class="detail-value">June 13, 2025 | 6:30 AM</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Assigned Driver</div>
-                    <div class="detail-value">James Ochieng (License: JOC345678)</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Vehicle Assigned</div>
-                    <div class="detail-value">Toyota Hiace (KAC 456D)</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Passengers</div>
-                    <div class="detail-value">12 Municipal staff members</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Completion Time</div>
-                    <div class="detail-value">5:45 PM (on schedule)</div>
-                  </div>
-                </div>
-                <div class="form-actions">
-                  <button type="button" class="btn btn-outline view-log-btn" data-assignment-id="3">
-                    <i class="fas fa-file-alt"></i> View Trip Log
-                  </button>
-                  <button type="button" class="btn btn-outline repeat-assignment-btn" data-assignment-id="3">
-                    <i class="fas fa-redo"></i> Repeat Assignment
-                  </button>
-                </div>
-              </div>
             </div>
-          </div>
+            <img src="{% if user.manager_profile.photo %}{{ user.manager_profile.photo.url }}{% else %}{% static 'managers/images/murangalogo.jpg' %}{% endif %}" 
+                 alt="User Avatar" 
+                 class="user-avatar">
         </div>
-      </main>
-    </div>
-  </div>
+    </header>
+
+    <main class="dashboard-content">
+        <h1 class="page-title"><i class="fas fa-tasks"></i> Task Management</h1>
+
+        <div class="management-tabs">
+            <button class="tab-btn active" data-tab="create-task">Create Mechanic Task</button>
+            <button class="tab-btn" data-tab="create-driver-assignment">Create Driver Assignment</button>
+            <button class="tab-btn" data-tab="assign-vehicle">Assign Vehicle</button>
+        </div>
+
+        <div id="create-task" class="tab-content active">
+            <div class="card">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="task_submit" value="1">
+                    {% if task_form.errors %}
+                        <div class="alert alert-danger">
+                            <ul>
+                                {% for field in task_form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in task_form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    <div class="form-section">
+                        <h3>Task Details</h3>
+                        <div class="form-group">
+                            <label for="{{ task_form.maintenance_request_id.id_for_label }}">Maintenance Request (Optional)</label>
+                            {{ task_form.maintenance_request_id }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ task_form.mechanic.id_for_label }}">Assign Mechanic</label>
+                            {{ task_form.mechanic }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ task_form.status.id_for_label }}">Task Status</label>
+                            {{ task_form.status }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ task_form.priority.id_for_label }}">Priority</label>
+                            {{ task_form.priority }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ task_form.notes.id_for_label }}">Task Notes (Optional)</label>
+                            {{ task_form.notes }}
+                        </div>
+                        <h3>Manual Task Details (Required if no Maintenance Request)</h3>
+                        <div class="form-group">
+                            <label for="{{ task_form.issue_title.id_for_label }}">Issue Title</label>
+                            {{ task_form.issue_title }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ task_form.issue_description.id_for_label }}">Issue Description</label>
+                            {{ task_form.issue_description }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ task_form.vehicle_number_plate.id_for_label }}">Vehicle Number Plate</label>
+                            {{ task_form.vehicle_number_plate }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ task_form.estimated_cost.id_for_label }}">Estimated Cost (KES)</label>
+                            {{ task_form.estimated_cost }}
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="reset" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="create-driver-assignment" class="tab-content">
+            <div class="card">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="driver_assignment_submit" value="1">
+                    {% if driver_assignment_form.errors %}
+                        <div class="alert alert-danger">
+                            <ul>
+                                {% for field in driver_assignment_form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in driver_assignment_form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    <div class="form-section">
+                        <h3>Assignment Details</h3>
+                        <div class="form-group">
+                            <label for="{{ driver_assignment_form.title.id_for_label }}">Assignment Title</label>
+                            {{ driver_assignment_form.title }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ driver_assignment_form.date.id_for_label }}">Date</label>
+                            {{ driver_assignment_form.date }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ driver_assignment_form.time.id_for_label }}">Time</label>
+                            {{ driver_assignment_form.time }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ driver_assignment_form.destination.id_for_label }}">Destination</label>
+                            {{ driver_assignment_form.destination }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ driver_assignment_form.driver.id_for_label }}">Assign Driver</label>
+                            {{ driver_assignment_form.driver }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ driver_assignment_form.vehicle_number_plate.id_for_label }}">Vehicle Number Plate</label>
+                            {{ driver_assignment_form.vehicle_number_plate }}
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <h3>Additional Information (Optional)</h3>
+                        <div class="form-group">
+                            <label for="{{ driver_assignment_form.passengers.id_for_label }}">Passengers</label>
+                            {{ driver_assignment_form.passengers }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ driver_assignment_form.estimated_distance.id_for_label }}">Estimated Distance (km)</label>
+                            {{ driver_assignment_form.estimated_distance }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ driver_assignment_form.special_instructions.id_for_label }}">Special Instructions</label>
+                            {{ driver_assignment_form.special_instructions }}
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="reset" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-user-check"></i> Create Assignment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="assign-vehicle" class="tab-content">
+            <div class="card">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="vehicle_assignment_submit" value="1">
+                    {% if vehicle_assignment_form.errors %}
+                        <div class="alert alert-danger">
+                            <ul>
+                                {% for field in vehicle_assignment_form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in vehicle_assignment_form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    <div class="form-section">
+                        <h3>Vehicle Assignment</h3>
+                        <div class="form-group">
+                            <label for="{{ vehicle_assignment_form.driver.id_for_label }}">Assign Driver</label>
+                            {{ vehicle_assignment_form.driver }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ vehicle_assignment_form.vehicle_number_plate.id_for_label }}">Vehicle Number Plate</label>
+                            {{ vehicle_assignment_form.vehicle_number_plate }}
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="reset" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-car"></i> Assign Vehicle</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'managers/js/job_management.js' %}"></script>
+<script src="{% static 'managers/js/job_management.js' %}"></script>
 {% endblock %}

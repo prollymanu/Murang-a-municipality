@@ -19,15 +19,23 @@ import io
 import csv
 import datetime
 from core.utils import generate_unique_id, get_greeting
-from drivers.models import DriverProfile
-from mechanics.models import MechanicProfile
-from mechanics.models import RepairInvoice
-from .forms import InvoiceStatusForm, InvoiceApprovalForm, InvoiceRejectionForm
+from drivers.models import SupportRequest
+from mechanics.models import MechanicSupportRequest
+from .models import SupportResponse, ManagerProfile, DriverAssignment, VehicleAssignment
+import logging
+from .forms import ManagerProfileForm, PasswordChangeForm, MechanicTaskForm, DriverAssignmentForm, VehicleAssignmentForm, InvoiceStatusForm, InvoiceApprovalForm, InvoiceRejectionForm
+from django.contrib.auth import update_session_auth_hash
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 import openpyxl
 from openpyxl import Workbook
 from reportlab.lib.pagesizes import A4
+from django.apps import apps
+
+logger = logging.getLogger(__name__)
+
+def get_user(request):
+    return request.user
 
 def generate_unique_id(prefix, length=8):
     chars = string.ascii_uppercase + string.digits
@@ -58,7 +66,7 @@ def maintenance(request):
     vehicle = request.GET.get('vehicle', 'all')
     query = request.GET.get('q', '')
 
-    qs = MaintenanceRequest.objects.all().select_related('driver__user', 'vehicle').prefetch_related('issues')
+    qs = MaintenanceRequest.objects.all().select_related('driver__user', 'vehicle').prefetch_related('issues').order_by('-submitted_at')
     if status != 'all': qs = qs.filter(status=status)
     if priority != 'all': qs = qs.filter(issues__priority=priority).distinct()
     if vehicle != 'all': qs = qs.filter(vehicle__number_plate=vehicle)
@@ -200,7 +208,7 @@ def assign_mechanic(request, id):
         return redirect('managers:maintenance')
 
     query = request.GET.get('q', '')
-    mechanics = MechanicProfile.objects.filter(status='active')
+    mechanics = MechanicProfile.objects.filter(status='active').order_by('full_name')
     if query:
         mechanics = mechanics.filter(Q(full_name__icontains=query) | Q(mechanic_id__icontains=query))
 
@@ -208,7 +216,6 @@ def assign_mechanic(request, id):
 
     if request.method == 'POST':
         mech = get_object_or_404(MechanicProfile, id=request.POST.get('mechanic_id'))
-        # If the task was rejected, update it; otherwise, create a new task
         if hasattr(req, 'assigned_task') and req.assigned_task.status == 'rejected':
             task = req.assigned_task
             task.mechanic = mech
@@ -218,12 +225,11 @@ def assign_mechanic(request, id):
             task.save()
         else:
             MechanicTask.objects.create(
-                maintenance_request=req,
+                maintenance_request=req,  # Changed from maintenance_request_id=req
                 mechanic=mech,
                 status='pending',
                 priority=req.issues.first().priority if req.issues.exists() else 'medium',
-                notes=f"Assigned to {mech.full_name} on {timezone.now().strftime('%Y-%m-%d %H:%M')}",
-                unique_task_id=f"T{uuid.uuid4().hex[:7].upper()}"
+                notes=f"Assigned to {mech.full_name} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
             )
         req.mechanic = mech
         req.status = 'pending'
@@ -241,7 +247,6 @@ def assign_mechanic(request, id):
         "page_obj": page_obj
     })
 
-
 @login_required
 def applications_view(request):
     query = request.GET.get('q', '')
@@ -250,15 +255,15 @@ def applications_view(request):
     license_class = request.GET.get('license', 'all')
     specialty = request.GET.get('specialty', 'all')
 
-    reg_qs = RegistrationRequest.objects.filter(is_approved=False)
+    reg_qs = RegistrationRequest.objects.filter(is_approved=False).order_by('-created_at')
     if role != 'all': reg_qs = reg_qs.filter(role=role)
     if query: reg_qs = reg_qs.filter(Q(full_name__icontains=query) | Q(email__icontains=query) | Q(phone_number__icontains=query))
 
-    drivers = DriverProfile.objects.select_related('user').all()
+    drivers = DriverProfile.objects.select_related('user').all().order_by('user__username')
     if status != 'all': drivers = drivers.filter(status=status)
     if license_class != 'all': drivers = drivers.filter(license_class=license_class)
 
-    mechanics = MechanicProfile.objects.select_related('user').all()
+    mechanics = MechanicProfile.objects.select_related('user').all().order_by('full_name')
     if status != 'all': mechanics = mechanics.filter(status=status)
     if specialty != 'all': mechanics = mechanics.filter(specialization=specialty)
 
@@ -282,26 +287,19 @@ def applications_view(request):
 def approve_registration(request, id):
     reg = get_object_or_404(RegistrationRequest, id=id)
 
-    # Prevent approving already approved requests
     if reg.is_approved:
         messages.error(request, 'Registration already approved.')
         return redirect('managers:applications')
 
-    # Prevent duplicate user
     if User.objects.filter(email=reg.email).exists():
         messages.error(request, 'User with this email already exists.')
         return redirect('managers:applications')
 
     try:
-        # Split full name
         full_name_parts = reg.full_name.strip().split()
         first_name = full_name_parts[0]
         last_name = " ".join(full_name_parts[1:]) if len(full_name_parts) > 1 else ''
-
-        # Generate unique username
         username = f"{reg.role}_{uuid.uuid4().hex[:8]}"
-
-        # Create user with hashed password directly
         user = User.objects.create(
             username=username,
             email=reg.email,
@@ -313,10 +311,9 @@ def approve_registration(request, id):
             id_no=reg.id_number if reg.id_number else None,
             location=reg.location if reg.location else None,
             is_active=True,
-            password=reg.password  # Set hashed password directly
+            password=reg.password
         )
 
-        # Create profile based on role
         if reg.role == 'driver':
             DriverProfile.objects.create(
                 user=user,
@@ -339,7 +336,6 @@ def approve_registration(request, id):
                 specialization=reg.specialization if reg.specialization else None
             )
 
-        # Delete registration request
         reg.delete()
         messages.success(request, f"{reg.full_name} approved and moved to active users.")
 
@@ -355,14 +351,10 @@ def deny_registration(request, id):
     if request.method == 'POST':
         reg = get_object_or_404(RegistrationRequest, id=id)
         reason = request.POST.get('deny_reason', '').strip()
-
-        # Log or notify as needed (optional)
         print(f"[INFO] Denied {reg.full_name}. Reason: {reason if reason else 'No reason provided'}")
-
         reg.delete()
         messages.success(request, f"{reg.full_name}'s registration request denied and deleted.")
     return redirect('managers:applications')
-
 
 @login_required
 def delete_driver(request, id):
@@ -385,7 +377,7 @@ def personnel_management(request):
     driver_query = request.GET.get('driver_search', '')
     mechanic_query = request.GET.get('mechanic_search', '')
 
-    drivers_qs = DriverProfile.objects.select_related('user')
+    drivers_qs = DriverProfile.objects.select_related('user').order_by('user__username')
     if driver_query:
         drivers_qs = drivers_qs.filter(
             Q(user__first_name__icontains=driver_query) |
@@ -393,7 +385,7 @@ def personnel_management(request):
             Q(user__email__icontains=driver_query)
         )
 
-    mechanics_qs = MechanicProfile.objects.all()
+    mechanics_qs = MechanicProfile.objects.all().order_by('full_name')
     if mechanic_query:
         mechanics_qs = mechanics_qs.filter(
             Q(full_name__icontains=mechanic_query) |
@@ -416,7 +408,6 @@ def personnel_management(request):
 @login_required
 def add_user_form(request):
     if request.method == 'POST':
-        # Required fields
         role = request.POST.get('role')
         first_name = request.POST.get('firstName')
         last_name = request.POST.get('lastName')
@@ -427,15 +418,12 @@ def add_user_form(request):
         experience_years = request.POST.get('experienceYears')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirmPassword')
-
-        # Optional fields
         drivers_license = request.POST.get('driversLicense')
-        license_classes = request.POST.getlist('licenseClass')  # Multiple select
+        license_classes = request.POST.getlist('licenseClass')
         department = request.POST.get('department')
         supervisor = request.POST.get('supervisor')
         specialization = request.POST.get('specialization')
 
-        # === Validation ===
         if not all([role, first_name, last_name, email, phone_number, experience_years, password, confirm_password]):
             messages.error(request, 'Required fields missing.')
             return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
@@ -453,7 +441,6 @@ def add_user_form(request):
             messages.error(request, 'Password must be strong: min 8 chars, upper, lower, number & special.')
             return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
-        # Duplicate checks
         if User.objects.filter(email=email).exists():
             messages.error(request, 'Email already used.')
             return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
@@ -479,11 +466,9 @@ def add_user_form(request):
                     messages.error(request, f"Invalid license class: {code}.")
                     return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
-        # === Creation ===
         try:
             full_name = f"{first_name} {last_name}".strip()
             username = f"{role}_{uuid.uuid4().hex[:8]}"
-
             user = User.objects.create(
                 username=username,
                 email=email,
@@ -509,7 +494,7 @@ def add_user_form(request):
                     department=department,
                     supervisor=supervisor
                 )
-            else:  # mechanic
+            else:
                 MechanicProfile.objects.create(
                     user=user,
                     mechanic_id=generate_unique_id('MEC'),
@@ -533,14 +518,121 @@ def add_user_form(request):
     return render(request, 'managers/add_user.html', {'KENYA_LICENSE_CLASSES': KENYA_LICENSE_CLASSES})
 
 @login_required
-def jobs(request):
-    return render(request, 'managers/job_management.html')
+def job_management(request):
+    greeting = get_greeting()
+
+    if request.method == "POST":
+        if "task_submit" in request.POST:
+            task_form = MechanicTaskForm(request.POST)
+            driver_assignment_form = DriverAssignmentForm()
+            vehicle_assignment_form = VehicleAssignmentForm()
+            if task_form.is_valid():
+                task = task_form.save(commit=False)
+                task.assigned_at = timezone.now()
+                task.save()
+                messages.success(request, f"Task {task.unique_task_id} created successfully.")
+                return redirect("managers:job_management")
+            else:
+                messages.error(request, "Please fix the errors in the task form.")
+        elif "driver_assignment_submit" in request.POST:
+            driver_assignment_form = DriverAssignmentForm(request.POST)
+            task_form = MechanicTaskForm()
+            vehicle_assignment_form = VehicleAssignmentForm()
+            if driver_assignment_form.is_valid():
+                driver_assignment_form.save()
+                messages.success(request, "Driver assignment created successfully.")
+                return redirect("managers:job_management")
+            else:
+                messages.error(request, "Please fix the errors in the driver assignment form.")
+        elif "vehicle_assignment_submit" in request.POST:
+            vehicle_assignment_form = VehicleAssignmentForm(request.POST)
+            task_form = MechanicTaskForm()
+            driver_assignment_form = DriverAssignmentForm()
+            if vehicle_assignment_form.is_valid():
+                vehicle_assignment_form.save()
+                messages.success(request, "Vehicle assigned successfully.")
+                return redirect("managers:job_management")
+            else:
+                messages.error(request, "Please fix the errors in the vehicle assignment form.")
+    else:
+        task_form = MechanicTaskForm()
+        driver_assignment_form = DriverAssignmentForm()
+        vehicle_assignment_form = VehicleAssignmentForm()
+
+    return render(request, "managers/job_management.html", {
+        "task_form": task_form,
+        "driver_assignment_form": driver_assignment_form,
+        "vehicle_assignment_form": vehicle_assignment_form,
+        "greeting": greeting,
+    })
+
+@login_required
+def mechanic_tasks(request):
+    user = get_user(request)
+    tasks = MechanicTask.objects.filter(manager=user).select_related('mechanic__user').order_by('-created_at')
+    search_query = request.GET.get('q', '')
+    status_filter = request.GET.get('status', 'all')
+
+    if search_query:
+        tasks = tasks.filter(
+            Q(issue_title__icontains=search_query) |
+            Q(issue_description__icontains=search_query) |
+            Q(vehicle_number_plate__icontains=search_query) |
+            Q(mechanic__user__first_name__icontains=search_query) |
+            Q(mechanic__user__last_name__icontains=search_query)
+        )
+    
+    if status_filter != 'all':
+        tasks = tasks.filter(status=status_filter)
+
+    paginator = Paginator(tasks, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'managers/mechanic_tasks.html', {
+        'greeting': get_greeting(),
+        'user': user,
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'status_filter': status_filter,
+    })
+
+@login_required
+def driver_assignments(request):
+    user = get_user(request)
+    assignments = DriverAssignment.objects.filter(manager=user).select_related('driver').order_by('-created_at')
+    search_query = request.GET.get('q', '')
+    status_filter = request.GET.get('status', 'all')
+
+    if search_query:
+        assignments = assignments.filter(
+            Q(title__icontains=search_query) |
+            Q(destination__icontains=search_query) |
+            Q(vehicle_number_plate__icontains=search_query) |
+            Q(driver__first_name__icontains=search_query) |
+            Q(driver__last_name__icontains=search_query)
+        )
+    
+    if status_filter != 'all':
+        assignments = assignments.filter(status=status_filter)
+
+    paginator = Paginator(assignments, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'managers/driver_assignments.html', {
+        'greeting': get_greeting(),
+        'user': user,
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'status_filter': status_filter,
+    })
 
 @login_required
 def repair_invoices(request):
-    invoices = RepairInvoice.objects.select_related('mechanic_task__mechanic').all()
+    RepairInvoice = apps.get_model('mechanics', 'RepairInvoice')
+    invoices = RepairInvoice.objects.select_related('mechanic_task__mechanic').all().order_by('-date_of_service')
 
-    # --- Filters ---
     status = request.GET.get('status')
     mechanic_id = request.GET.get('mechanic')
     search_query = request.GET.get('search')
@@ -565,11 +657,10 @@ def repair_invoices(request):
     if end_date:
         invoices = invoices.filter(date_of_service__lte=end_date)
 
-    paginator = Paginator(invoices.order_by('-date_of_service'), 10)
+    paginator = Paginator(invoices, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # --- Summary ---
     total_paid = RepairInvoice.objects.filter(status='paid').aggregate(Sum('total_cost'))['total_cost__sum'] or 0
     pending_approval = RepairInvoice.objects.filter(status='pending').aggregate(Sum('total_cost'))['total_cost__sum'] or 0
     rejected_invoices = RepairInvoice.objects.filter(status='rejected').aggregate(Sum('total_cost'))['total_cost__sum'] or 0
@@ -591,9 +682,9 @@ def repair_invoices(request):
     }
     return render(request, 'managers/repair_invoices.html', context)
 
-
 @login_required
 def approve_invoice(request, invoice_id):
+    RepairInvoice = apps.get_model('mechanics', 'RepairInvoice')
     invoice = get_object_or_404(RepairInvoice, pk=invoice_id)
     if request.method == 'POST':
         form = InvoiceApprovalForm(request.POST)
@@ -610,9 +701,9 @@ def approve_invoice(request, invoice_id):
         form = InvoiceApprovalForm()
     return render(request, 'managers/approve_invoice.html', {'invoice': invoice, 'form': form})
 
-
 @login_required
 def reject_invoice(request, invoice_id):
+    RepairInvoice = apps.get_model('mechanics', 'RepairInvoice')
     invoice = get_object_or_404(RepairInvoice, pk=invoice_id)
     if request.method == 'POST':
         form = InvoiceRejectionForm(request.POST)
@@ -629,9 +720,9 @@ def reject_invoice(request, invoice_id):
         form = InvoiceRejectionForm()
     return render(request, 'managers/reject_invoice.html', {'invoice': invoice, 'form': form})
 
-
 @login_required
 def unapprove_invoice(request, invoice_id):
+    RepairInvoice = apps.get_model('mechanics', 'RepairInvoice')
     invoice = get_object_or_404(RepairInvoice, pk=invoice_id)
     if invoice.status != 'approved':
         messages.error(request, "Invoice is not approved.")
@@ -644,9 +735,9 @@ def unapprove_invoice(request, invoice_id):
         messages.success(request, f"Invoice #{invoice.task_unique_id} moved back to Pending.")
     return redirect('managers:repair_invoices')
 
-
 @login_required
 def unreject_invoice(request, invoice_id):
+    RepairInvoice = apps.get_model('mechanics', 'RepairInvoice')
     invoice = get_object_or_404(RepairInvoice, pk=invoice_id)
     if invoice.status != 'rejected':
         messages.error(request, "Invoice is not rejected.")
@@ -661,8 +752,6 @@ def unreject_invoice(request, invoice_id):
         invoice.save()
         messages.success(request, f"Invoice #{invoice.task_unique_id} moved back to Pending.")
     return redirect('managers:repair_invoices')
-
-
 
 def export_excel(invoices):
     wb = Workbook()
@@ -737,8 +826,8 @@ def export_pdf(invoices):
     return response
 
 def export_invoices(request, format):
-    # Get filtered queryset same way as repair_invoices view
-    invoices = RepairInvoice.objects.select_related('mechanic_task__mechanic_profile').all()
+    RepairInvoice = apps.get_model('mechanics', 'RepairInvoice')
+    invoices = RepairInvoice.objects.select_related('mechanic_task__mechanic_profile').all().order_by('-date_of_service')
 
     status = request.GET.get('status')
     mechanic_id = request.GET.get('mechanic')
@@ -769,17 +858,18 @@ def export_invoices(request, format):
         return HttpResponse("Invalid export format", status=400)
 
 def export_invoices_pdf(request):
+    RepairInvoice = apps.get_model('mechanics', 'RepairInvoice')
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="repair_invoices.pdf"'
 
     p = canvas.Canvas(response)
-    invoices = RepairInvoice.objects.all()
+    invoices = RepairInvoice.objects.all().order_by('-date_of_service')
 
     y = 800
     p.drawString(100, y, "Repair Invoices Report")
     y -= 30
     for invoice in invoices:
-        line = f"#{invoice.invoice_number} - {invoice.mechanic} - Ksh {invoice.amount} - {invoice.status}"
+        line = f"#{invoice.task_unique_id} - {invoice.mechanic_task.mechanic_profile.full_name if invoice.mechanic_task and invoice.mechanic_task.mechanic_profile else ''} - Ksh {invoice.total_cost} - {invoice.status}"
         p.drawString(100, y, line)
         y -= 20
         if y < 50:
@@ -790,20 +880,16 @@ def export_invoices_pdf(request):
     p.save()
     return response
 
-
 @login_required
 def reports(request):
-    # Filters
     status_filter = request.GET.get('status', 'all')
     date_range = request.GET.get('date_range', 'all')
     vehicle_filter = request.GET.get('vehicle', 'all')
     driver_filter = request.GET.get('driver', 'all')
     mechanic_filter = request.GET.get('mechanic', 'all')
 
-    # Base queryset for maintenance requests
-    requests = MaintenanceRequest.objects.select_related('driver__user', 'vehicle', 'mechanic').prefetch_related('issues')
+    requests = MaintenanceRequest.objects.select_related('driver__user', 'vehicle', 'mechanic').prefetch_related('issues').order_by('-submitted_at')
 
-    # Apply filters
     if status_filter != 'all':
         requests = requests.filter(status=status_filter)
     if vehicle_filter != 'all':
@@ -820,37 +906,33 @@ def reports(request):
         elif date_range == 'month':
             requests = requests.filter(submitted_at__gte=timezone.now() - timedelta(days=30))
 
-    # Calculate stats for the stats cards
     total_requests = requests.count()
     pending_requests = requests.filter(status='pending').count()
     completed_requests = requests.filter(status='completed').count()
     high_priority_requests = requests.filter(issues__priority='high').distinct().count()
 
-    # Mechanic Reports (exclude null/empty mechanic_id)
+    # Try using 'mechanictask' as a potential relationship (singular from choices)
     mechanic_stats = MechanicProfile.objects.filter(
         mechanic_id__isnull=False, mechanic_id__gt=''
     ).annotate(
-        total_tasks=Count('tasks', filter=Q(tasks__status='completed')),
-        total_cost=Sum('tasks__invoice__total_cost', filter=Q(tasks__status='completed'))
-    ).values('full_name', 'mechanic_id', 'total_tasks', 'total_cost')
+        total_tasks=Count('mechanictask', filter=Q(mechanictask__status='completed')),
+        total_cost=Sum('mechanictask__invoice__total_cost', filter=Q(mechanictask__status='completed'))
+    ).values('full_name', 'mechanic_id', 'total_tasks', 'total_cost').order_by('full_name')
 
-    # Driver Reports (exclude null/empty driver_id, use first_name and last_name)
     driver_stats = DriverProfile.objects.filter(
         driver_id__isnull=False, driver_id__gt=''
     ).annotate(
         total_requests=Count('maintenancerequest'),
         total_issues=Count('maintenancerequest__issues')
-    ).values('driver_id', 'user__first_name', 'user__last_name', 'total_requests', 'total_issues')
+    ).values('driver_id', 'user__first_name', 'user__last_name', 'total_requests', 'total_issues').order_by('user__username')
 
-    # Vehicle Reports (exclude null/empty number_plate)
     vehicle_stats = Vehicle.objects.filter(
         number_plate__isnull=False, number_plate__gt=''
     ).annotate(
         total_requests=Count('maintenancerequest'),
         total_cost=Sum('maintenancerequest__issues__cost_estimate')
-    ).values('number_plate', 'make', 'model', 'total_requests', 'total_cost')
+    ).values('number_plate', 'make', 'model', 'total_requests', 'total_cost').order_by('number_plate')
 
-    # Chart Data (e.g., number of requests per vehicle)
     chart_labels = [v['number_plate'] for v in vehicle_stats]
     chart_data = [v['total_requests'] for v in vehicle_stats]
 
@@ -866,9 +948,9 @@ def reports(request):
         'vehicle_filter': vehicle_filter,
         'driver_filter': driver_filter,
         'mechanic_filter': mechanic_filter,
-        'vehicles': Vehicle.objects.filter(number_plate__isnull=False, number_plate__gt='').values('number_plate'),
-        'drivers': DriverProfile.objects.filter(driver_id__isnull=False, driver_id__gt='').values('driver_id', 'user__first_name', 'user__last_name'),
-        'mechanics': MechanicProfile.objects.filter(mechanic_id__isnull=False, mechanic_id__gt='').values('mechanic_id', 'full_name'),
+        'vehicles': Vehicle.objects.filter(number_plate__isnull=False, number_plate__gt='').values('number_plate').order_by('number_plate'),
+        'drivers': DriverProfile.objects.filter(driver_id__isnull=False, driver_id__gt='').values('driver_id', 'user__first_name', 'user__last_name').order_by('user__username'),
+        'mechanics': MechanicProfile.objects.filter(mechanic_id__isnull=False, mechanic_id__gt='').values('mechanic_id', 'full_name').order_by('full_name'),
         'total_requests': total_requests,
         'pending_requests': pending_requests,
         'completed_requests': completed_requests,
@@ -884,7 +966,7 @@ def export_reports(request):
     writer = csv.writer(response)
     writer.writerow(['Report Type', 'ID', 'Driver', 'Vehicle', 'Issue', 'Cost', 'Status', 'Date'])
 
-    requests = MaintenanceRequest.objects.select_related('driver__user', 'vehicle', 'mechanic').prefetch_related('issues')
+    requests = MaintenanceRequest.objects.select_related('driver__user', 'vehicle', 'mechanic').prefetch_related('issues').order_by('-submitted_at')
     for req in requests:
         for issue in req.issues.all():
             writer.writerow([
@@ -904,7 +986,7 @@ def export_reports(request):
 def report_details(request, report_type, report_id):
     if report_type == 'mechanic':
         profile = get_object_or_404(MechanicProfile, mechanic_id=report_id)
-        requests = MaintenanceRequest.objects.filter(mechanic=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice')
+        requests = MaintenanceRequest.objects.filter(mechanic=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice').order_by('-submitted_at')
         title = f"Mechanic Report: {profile.full_name or profile.user.username}"
         details = {
             'type': 'mechanic',
@@ -915,7 +997,7 @@ def report_details(request, report_type, report_id):
         }
     elif report_type == 'driver':
         profile = get_object_or_404(DriverProfile, driver_id=report_id)
-        requests = MaintenanceRequest.objects.filter(driver=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice')
+        requests = MaintenanceRequest.objects.filter(driver=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice').order_by('-submitted_at')
         driver_name = f"{profile.user.first_name} {profile.user.last_name}".strip() or profile.user.username
         title = f"Driver Report: {driver_name}"
         details = {
@@ -927,7 +1009,7 @@ def report_details(request, report_type, report_id):
         }
     elif report_type == 'vehicle':
         profile = get_object_or_404(Vehicle, number_plate=report_id)
-        requests = MaintenanceRequest.objects.filter(vehicle=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice')
+        requests = MaintenanceRequest.objects.filter(vehicle=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice').order_by('-submitted_at')
         title = f"Vehicle Report: {profile.make} {profile.model} ({profile.number_plate})"
         details = {
             'type': 'vehicle',
@@ -948,11 +1030,136 @@ def report_details(request, report_type, report_id):
 
 @login_required
 def settings(request):
-    return render(request, 'managers/settings.html')
+    user = get_user(request)
+    try:
+        manager_profile = ManagerProfile.objects.get(user=user)
+    except ManagerProfile.DoesNotExist:
+        manager_profile = ManagerProfile.objects.create(user=user)
+
+    if request.method == 'POST':
+        if 'profile_submit' in request.POST:
+            profile_form = ManagerProfileForm(request.POST, request.FILES, instance=user)
+            if profile_form.is_valid():
+                profile_form.save()
+                if 'photo' in request.FILES:
+                    manager_profile.photo = request.FILES['photo']
+                    manager_profile.save()
+                messages.success(request, "Profile updated successfully.")
+                logger.info(f"User {user.username} updated their profile")
+                return redirect('managers:settings')
+            else:
+                messages.error(request, "Please correct the errors in the profile form.")
+        elif 'password_submit' in request.POST:
+            password_form = PasswordChangeForm(user=user, data=request.POST)
+            if password_form.is_valid():
+                password_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, "Password updated successfully.")
+                logger.info(f"User {user.username} updated their password")
+                return redirect('managers:settings')
+            else:
+                messages.error(request, "Please correct the errors in the password form.")
+    else:
+        profile_form = ManagerProfileForm(instance=user)
+        password_form = PasswordChangeForm(user=user)
+
+    return render(request, 'managers/settings.html', {
+        'greeting': get_greeting(),
+        'user': user,
+        'manager_profile': manager_profile,
+        'profile_form': profile_form,
+        'password_form': password_form,
+    })
 
 @login_required
 def support(request):
-    return render(request, 'managers/support.html')
+    user = get_user(request)
+    driver_requests = SupportRequest.objects.all().select_related('user').order_by('-created_at')
+    mechanic_requests = MechanicSupportRequest.objects.all().select_related('mechanic__user').order_by('-created_at')
+
+    status_filter = request.GET.get('status', 'all')
+    type_filter = request.GET.get('type', 'all')
+
+    if status_filter != 'all':
+        driver_requests = driver_requests.filter(status=status_filter)
+        mechanic_requests = mechanic_requests.filter(status=status_filter)
+    
+    if type_filter == 'driver':
+        mechanic_requests = mechanic_requests.none()
+    elif type_filter == 'mechanic':
+        driver_requests = driver_requests.none()
+
+    return render(request, 'managers/support_requests.html', {
+        'greeting': get_greeting(),
+        'user': user,
+        'driver_requests': driver_requests,
+        'mechanic_requests': mechanic_requests,
+        'status_filter': status_filter,
+        'type_filter': type_filter,
+    })
+
+@login_required
+def add_response(request, request_type, request_id):
+    user = get_user(request)
+    if not (user.role == 'manager' or user.is_staff or user.is_superuser):
+        logger.warning(f"Unauthorized attempt to respond to support request by {user.username} (role: {user.role})")
+        messages.error(request, "You are not authorized to respond to support requests.")
+        return redirect('core:profile_management')
+
+    if request_type == 'driver':
+        support_request = get_object_or_404(SupportRequest, pk=request_id)
+    else:
+        support_request = get_object_or_404(MechanicSupportRequest, pk=request_id)
+
+    if request.method == 'POST':
+        message = request.POST.get('message')
+        if not message:
+            messages.error(request, "Response message is required.")
+            return redirect('managers:support_requests')
+        
+        SupportResponse.objects.create(
+            driver_request=support_request if request_type == 'driver' else None,
+            mechanic_request=support_request if request_type == 'mechanic' else None,
+            responder=user,
+            message=message
+        )
+        messages.success(request, "Response added successfully.")
+        return redirect('managers:support_requests')
+
+    return render(request, 'managers/support_response.html', {
+        'greeting': get_greeting(),
+        'request': support_request,
+        'request_type': request_type,
+    })
+
+@login_required
+def update_status(request, request_type, request_id):
+    user = get_user(request)
+    if not (user.role == 'manager' or user.is_staff or user.is_superuser):
+        logger.warning(f"Unauthorized attempt to update support request status by {user.username} (role: {user.role})")
+        messages.error(request, "You are not authorized to update support request statuses.")
+        return redirect('core:profile_management')
+
+    if request_type == 'driver':
+        support_request = get_object_or_404(SupportRequest, pk=request_id)
+    else:
+        support_request = get_object_or_404(MechanicSupportRequest, pk=request_id)
+
+    if request.method == 'POST':
+        status = request.POST.get('status')
+        if status in ['open', 'resolved', 'closed']:
+            support_request.status = status
+            support_request.save()
+            messages.success(request, f"Support request marked as {status.capitalize()}.")
+        else:
+            messages.error(request, "Invalid status selected.")
+        return redirect('managers:support_requests')
+
+    return render(request, 'managers/support_requests.html', {
+        'greeting': get_greeting(),
+        'request': support_request,
+        'request_type': request_type,
+    })
 
 @login_required
 def drivers(request):

@@ -60,10 +60,21 @@
             <div class="task-header">
               <div>
                 <h3 class="task-title">
-                  {{ task.maintenance_request.vehicle.number_plate }} - {{ task.maintenance_request.vehicle.vehicle_type|default:task.maintenance_request.vehicle.model }}
+                  {% if task.maintenance_request %}
+                    {{ task.maintenance_request.vehicle.number_plate }}
+                    - {{ task.maintenance_request.vehicle.vehicle_type|default:task.maintenance_request.vehicle.model }}
+                  {% else %}
+                    {{ task.vehicle_number|default:"Manual Task (No Vehicle)" }}
+                  {% endif %}
                   <span class="status-{{ task.status }}">{{ task.get_status_display }}</span>
                 </h3>
-                <div class="task-id">Request ID: #{{ task.maintenance_request.id }}</div>
+                <div class="task-id">
+                  {% if task.maintenance_request %}
+                    Request ID: #{{ task.maintenance_request.id }}
+                  {% else %}
+                    Manual Task (No Request ID)
+                  {% endif %}
+                </div>
                 <div class="task-unique-id">Unique Task ID: {{ task.unique_task_id }}</div>
               </div>
               <div class="priority-{{ task.priority }}">
@@ -74,20 +85,36 @@
             <div class="task-details">
               <div class="detail-row">
                 <div class="detail-label">Location:</div>
-                <div class="detail-value">{{ task.maintenance_request.vehicle.location|default:"N/A" }}</div>
+                <div class="detail-value">
+                  {% if task.maintenance_request %}
+                    {{ task.maintenance_request.vehicle.location|default:"N/A" }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </div>
               </div>
               <div class="detail-row">
                 <div class="detail-label">Submitted At:</div>
-                <div class="detail-value">{{ task.maintenance_request.submitted_at|date:"d M Y H:i" }}</div>
+                <div class="detail-value">
+                  {% if task.maintenance_request %}
+                    {{ task.maintenance_request.submitted_at|date:"d M Y H:i" }}
+                  {% else %}
+                    {{ task.created_at|default:"N/A"|date:"d M Y H:i" }}
+                  {% endif %}
+                </div>
               </div>
               <div class="detail-row">
                 <div class="detail-label">Issues:</div>
                 <div class="detail-value">
-                  {% for issue in task.maintenance_request.issues.all %}
-                    {{ issue.title }} (Ksh {{ issue.cost_estimate|floatformat:2 }}){% if not forloop.last %}, {% endif %}
-                  {% empty %}
-                    No issues
-                  {% endfor %}
+                  {% if task.maintenance_request %}
+                    {% for issue in task.maintenance_request.issues.all %}
+                      {{ issue.title }} (Ksh {{ issue.cost_estimate|floatformat:2 }}){% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                      No issues
+                    {% endfor %}
+                  {% else %}
+                    Manually Assigned – No Issue Details
+                  {% endif %}
                 </div>
               </div>
               {% if task.status == 'rejected' %}
