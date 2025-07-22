@@ -1,0 +1,102 @@
+<div class="filters-row">
+    <form method="get" class="filters-form">
+      <!-- Status -->
+      <div class="filter-group">
+        <label class="filter-label">Status</label>
+        <select class="filter-select" name="status">
+          <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+          {% for choice in requests.model.STATUS_CHOICES %}
+            <option value="{{ choice.0 }}" {% if status_filter == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+          {% endfor %}
+        </select>
+      </div>
+  
+      <!-- Vehicle -->
+      <div class="filter-group">
+        <label class="filter-label">Vehicle</label>
+        <select class="filter-select" name="vehicle">
+          <option value="all" {% if vehicle_filter == 'all' %}selected{% endif %}>All</option>
+          {% for vehicle in vehicles %}
+            <option value="{{ vehicle.number_plate }}" {% if vehicle_filter == vehicle.number_plate %}selected{% endif %}>
+              {{ vehicle.number_plate }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+  
+      <!-- Driver -->
+      <div class="filter-group">
+        <label class="filter-label">Driver</label>
+        <select class="filter-select" name="driver">
+          <option value="all" {% if driver_filter == 'all' %}selected{% endif %}>All</option>
+          {% for driver in drivers %}
+            <option value="{{ driver.driver_id }}" {% if driver_filter == driver.driver_id %}selected{% endif %}>
+              {{ driver.user__first_name }} {{ driver.user__last_name|default_if_none:"" }}
+              {% if not driver.user__first_name and not driver.user__last_name %}({{ driver.user__username }}){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+  
+      <!-- Mechanic -->
+      <div class="filter-group">
+        <label class="filter-label">Mechanic</label>
+        <select class="filter-select" name="mechanic">
+          <option value="all" {% if mechanic_filter == 'all' %}selected{% endif %}>All</option>
+          {% for mechanic in mechanics %}
+            <option value="{{ mechanic.mechanic_id }}" {% if mechanic_filter == mechanic.mechanic_id %}selected{% endif %}>
+              {{ mechanic.full_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+  
+      <!-- Date Range -->
+      <div class="filter-group">
+        <label class="filter-label">Date Range</label>
+        <select class="filter-select" name="date_range">
+          <option value="all" {% if date_range == 'all' %}selected{% endif %}>All</option>
+          <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
+          <option value="week" {% if date_range == 'week' %}selected{% endif %}>This Week</option>
+          <option value="month" {% if date_range == 'month' %}selected{% endif %}>This Month</option>
+          <option value="year" {% if date_range == 'year' %}selected{% endif %}>This Year</option>
+        </select>
+      </div>
+  
+      <!-- Time Range -->
+      <div class="filter-group">
+        <label class="filter-label">Time Range</label>
+        <select class="filter-select" name="time_range">
+          <option value="day" {% if time_range == 'day' %}selected{% endif %}>Daily</option>
+          <option value="week" {% if time_range == 'week' %}selected{% endif %}>Weekly</option>
+          <option value="month" {% if time_range == 'month' %}selected{% endif %}>Monthly</option>
+          <option value="year" {% if time_range == 'year' %}selected{% endif %}>Yearly</option>
+        </select>
+      </div>
+  
+      <!-- Report Type -->
+      <div class="filter-group">
+        <label class="filter-label">Report Type</label>
+        <select class="filter-select" name="report_type">
+          <option value="maintenance" {% if request.GET.report_type == 'maintenance' %}selected{% endif %}>Maintenance</option>
+          <option value="invoices" {% if request.GET.report_type == 'invoices' %}selected{% endif %}>Invoices</option>
+          <option value="mechanics" {% if request.GET.report_type == 'mechanics' %}selected{% endif %}>Mechanics</option>
+          <option value="drivers" {% if request.GET.report_type == 'drivers' %}selected{% endif %}>Drivers</option>
+          <option value="vehicles" {% if request.GET.report_type == 'vehicles' %}selected{% endif %}>Vehicles</option>
+        </select>
+      </div>
+  
+      <!-- Buttons -->
+      <button type="submit" class="btn btn-primary">Apply</button>
+      <a href="{% url 'managers:export_reports' %}?report_type={{ request.GET.report_type|default:'maintenance' }}&type=csv&date_range={{ date_range }}&time_range={{ time_range }}" class="btn btn-outline">
+        <i class="fas fa-download"></i> CSV
+      </a>
+      <a href="{% url 'managers:export_reports' %}?report_type={{ request.GET.report_type|default:'maintenance' }}&type=excel&date_range={{ date_range }}&time_range={{ time_range }}" class="btn btn-outline">
+        <i class="fas fa-file-excel"></i> Excel
+      </a>
+      <a href="{% url 'managers:export_reports' %}?report_type={{ request.GET.report_type|default:'maintenance' }}&type=pdf&date_range={{ date_range }}&time_range={{ time_range }}" class="btn btn-outline">
+        <i class="fas fa-file-pdf"></i> PDF
+      </a>
+    </form>
+  </div>
+  

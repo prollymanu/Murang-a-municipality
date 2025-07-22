@@ -20,17 +20,29 @@ import csv
 import datetime
 from core.utils import generate_unique_id, get_greeting
 from drivers.models import SupportRequest
-from mechanics.models import MechanicSupportRequest
+from mechanics.models import MechanicSupportRequest, RepairInvoice
 from .models import SupportResponse, ManagerProfile, DriverAssignment, VehicleAssignment
 import logging
 from .forms import ManagerProfileForm, PasswordChangeForm, MechanicTaskForm, DriverAssignmentForm, VehicleAssignmentForm, InvoiceStatusForm, InvoiceApprovalForm, InvoiceRejectionForm
 from django.contrib.auth import update_session_auth_hash
 from django.http import HttpResponse
-from reportlab.pdfgen import canvas
 import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.drawing.image import Image as XLImage
 from openpyxl import Workbook
-from reportlab.lib.pagesizes import A4
 from django.apps import apps
+from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear
+from io import BytesIO
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Paragraph, Spacer, Image as PDFImage
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from django.contrib.staticfiles import finders
+from reportlab.lib.utils import Image as ReportlabImage  # Explicitly import the Image class
+from django.http import JsonResponse
+from django.http import HttpResponseBadRequest
+
 
 logger = logging.getLogger(__name__)
 
@@ -882,151 +894,566 @@ def export_invoices_pdf(request):
 
 @login_required
 def reports(request):
-    status_filter = request.GET.get('status', 'all')
-    date_range = request.GET.get('date_range', 'all')
-    vehicle_filter = request.GET.get('vehicle', 'all')
-    driver_filter = request.GET.get('driver', 'all')
-    mechanic_filter = request.GET.get('mechanic', 'all')
+    # Maintenance Stats 
+    total_requests = MaintenanceRequest.objects.count()
+    pending_requests = MaintenanceRequest.objects.filter(status='pending').count()
+    approved_requests = MaintenanceRequest.objects.filter(status='approved').count()
+    assigned_requests = MaintenanceRequest.objects.filter(mechanic__isnull=False).count()
+    completed_requests = MaintenanceRequest.objects.filter(status='completed').count()
 
-    requests = MaintenanceRequest.objects.select_related('driver__user', 'vehicle', 'mechanic').prefetch_related('issues').order_by('-submitted_at')
+    # High-priority requests based on related issues
+    high_priority_requests = MaintenanceRequest.objects.filter(
+        issues__priority='high'
+    ).distinct().count()
 
-    if status_filter != 'all':
-        requests = requests.filter(status=status_filter)
-    if vehicle_filter != 'all':
-        requests = requests.filter(vehicle__number_plate=vehicle_filter)
-    if driver_filter != 'all':
-        requests = requests.filter(driver__driver_id=driver_filter)
-    if mechanic_filter != 'all':
-        requests = requests.filter(mechanic__mechanic_id=mechanic_filter)
-    if date_range != 'all':
-        if date_range == 'today':
-            requests = requests.filter(submitted_at__date=timezone.now().date())
-        elif date_range == 'week':
-            requests = requests.filter(submitted_at__gte=timezone.now() - timedelta(days=7))
-        elif date_range == 'month':
-            requests = requests.filter(submitted_at__gte=timezone.now() - timedelta(days=30))
+    # Recent maintenance requests (displayed in Maintenance tab)
+    requests_qs = MaintenanceRequest.objects.select_related(
+        'driver__user', 'vehicle'
+    ).order_by('-submitted_at')[:10]
 
-    total_requests = requests.count()
-    pending_requests = requests.filter(status='pending').count()
-    completed_requests = requests.filter(status='completed').count()
-    high_priority_requests = requests.filter(issues__priority='high').distinct().count()
+    #  Mechanics Stats
+    mechanic_stats = (
+        MechanicProfile.objects.annotate(
+            total_tasks=Count('assigned_requests', distinct=True),
+            accepted_tasks=Count(
+                'assigned_requests', filter=Q(assigned_requests__status='approved'), distinct=True
+            ),
+            completed_tasks=Count(
+                'assigned_requests', filter=Q(assigned_requests__status='completed'), distinct=True
+            ),
+            invoices_sent=Count('mechanictask__invoice', distinct=True),
+            pending_invoices=Count(
+                'mechanictask__invoice',
+                filter=Q(mechanictask__invoice__status='pending'),
+                distinct=True,
+            ),
+            approved_invoices=Count(
+                'mechanictask__invoice',
+                filter=Q(mechanictask__invoice__status='approved'),
+                distinct=True,
+            ),
+            paid_invoices=Count(
+                'mechanictask__invoice',
+                filter=Q(mechanictask__invoice__status='paid'),
+                distinct=True,
+            ),
+        )
+        .values(
+            'mechanic_id',
+            'full_name',
+            'total_tasks',
+            'accepted_tasks',
+            'completed_tasks',
+            'invoices_sent',
+            'pending_invoices',
+            'approved_invoices',
+            'paid_invoices',
+        )
+        .order_by('-total_tasks')
+    )
 
-    # Try using 'mechanictask' as a potential relationship (singular from choices)
-    mechanic_stats = MechanicProfile.objects.filter(
-        mechanic_id__isnull=False, mechanic_id__gt=''
-    ).annotate(
-        total_tasks=Count('mechanictask', filter=Q(mechanictask__status='completed')),
-        total_cost=Sum('mechanictask__invoice__total_cost', filter=Q(mechanictask__status='completed'))
-    ).values('full_name', 'mechanic_id', 'total_tasks', 'total_cost').order_by('full_name')
+    # Driver Stats
+    driver_stats = (
+        DriverProfile.objects.annotate(
+            total_requests=Count('maintenancerequest', distinct=True),
+            pending_requests=Count(
+                'maintenancerequest',
+                filter=Q(maintenancerequest__status='pending'),
+                distinct=True,
+            ),
+            approved_requests=Count(
+                'maintenancerequest',
+                filter=Q(maintenancerequest__status='approved'),
+                distinct=True,
+            ),
+            completed_requests=Count(
+                'maintenancerequest',
+                filter=Q(maintenancerequest__status='completed'),
+                distinct=True,
+            ),
+        )
+        .values(
+            'driver_id',
+            'user__first_name',
+            'user__last_name',
+            'total_requests',
+            'pending_requests',
+            'approved_requests',
+            'completed_requests',
+        )
+        .order_by('-total_requests')
+    )
 
-    driver_stats = DriverProfile.objects.filter(
-        driver_id__isnull=False, driver_id__gt=''
-    ).annotate(
-        total_requests=Count('maintenancerequest'),
-        total_issues=Count('maintenancerequest__issues')
-    ).values('driver_id', 'user__first_name', 'user__last_name', 'total_requests', 'total_issues').order_by('user__username')
+    #  Vehicle Stats
+    vehicle_stats = (
+        Vehicle.objects.annotate(
+            total_repairs=Count('maintenancerequest', distinct=True)
+        )
+        .values('number_plate', 'make', 'model', 'total_repairs')
+        .order_by('-total_repairs')
+    )
 
-    vehicle_stats = Vehicle.objects.filter(
-        number_plate__isnull=False, number_plate__gt=''
-    ).annotate(
-        total_requests=Count('maintenancerequest'),
-        total_cost=Sum('maintenancerequest__issues__cost_estimate')
-    ).values('number_plate', 'make', 'model', 'total_requests', 'total_cost').order_by('number_plate')
-
-    chart_labels = [v['number_plate'] for v in vehicle_stats]
-    chart_data = [v['total_requests'] for v in vehicle_stats]
+    # Invoices Stats 
+    invoices_qs = RepairInvoice.objects.select_related('mechanic_task__mechanic').order_by('-created_at')[:10]
 
     context = {
-        'requests': requests,
+        # Main stats
+        'total_requests': total_requests,
+        'pending_requests': pending_requests,
+        'approved_requests': approved_requests,
+        'assigned_requests': assigned_requests,
+        'completed_requests': completed_requests,
+        'high_priority_requests': high_priority_requests,
+
+        # Tables
+        'requests': requests_qs,
         'mechanic_stats': mechanic_stats,
         'driver_stats': driver_stats,
         'vehicle_stats': vehicle_stats,
-        'chart_labels': chart_labels,
-        'chart_data': chart_data,
-        'status_filter': status_filter,
-        'date_range': date_range,
-        'vehicle_filter': vehicle_filter,
-        'driver_filter': driver_filter,
-        'mechanic_filter': mechanic_filter,
-        'vehicles': Vehicle.objects.filter(number_plate__isnull=False, number_plate__gt='').values('number_plate').order_by('number_plate'),
-        'drivers': DriverProfile.objects.filter(driver_id__isnull=False, driver_id__gt='').values('driver_id', 'user__first_name', 'user__last_name').order_by('user__username'),
-        'mechanics': MechanicProfile.objects.filter(mechanic_id__isnull=False, mechanic_id__gt='').values('mechanic_id', 'full_name').order_by('full_name'),
-        'total_requests': total_requests,
-        'pending_requests': pending_requests,
-        'completed_requests': completed_requests,
-        'high_priority_requests': high_priority_requests,
+        'invoices': invoices_qs,
+
+        'time_range': request.GET.get('time_range', 'monthly'),
     }
     return render(request, 'managers/reports.html', context)
 
+
+@login_required
+def reports_chart_data(request):
+    """AJAX endpoint for real-time chart updates."""
+    time_range = request.GET.get('time_range', 'day')
+
+    # Maintenance Chart (pie)
+    maintenance_status = MaintenanceRequest.objects.values('status').annotate(count=Count('id'))
+    maintenance_labels = [m['status'].capitalize() for m in maintenance_status]
+    maintenance_data = [m['count'] for m in maintenance_status]
+
+    # Invoice Chart (pie)
+    invoice_status = RepairInvoice.objects.values('status').annotate(count=Count('id'))
+    invoice_labels = [i['status'].capitalize() for i in invoice_status]
+    invoice_data = [i['count'] for i in invoice_status]
+
+    # Vehicle Repairs (bar)
+    vehicle_repairs = Vehicle.objects.annotate(total_repairs=Count('maintenancerequest')).values('number_plate', 'total_repairs')
+    vehicle_labels = [v['number_plate'] for v in vehicle_repairs]
+    vehicle_data = [v['total_repairs'] for v in vehicle_repairs]
+
+    return JsonResponse({
+        'maintenance': {'labels': maintenance_labels, 'data': maintenance_data},
+        'invoices': {'labels': invoice_labels, 'data': invoice_data},
+        'vehicles': {'labels': vehicle_labels, 'data': vehicle_data},
+    })
+
 @login_required
 def export_reports(request):
+    report_type = request.GET.get('report_type', 'maintenance')  # maintenance, invoices, mechanics, drivers, vehicles
+    export_type = request.GET.get('type', 'csv')  # csv, excel, pdf
+    date_range = request.GET.get('date_range', 'all')
+    time_range = request.GET.get('time_range', 'day')  # day, week, month, year
+
+    # Base querysets
+    maintenance_qs = MaintenanceRequest.objects.select_related('driver__user', 'vehicle', 'mechanic').prefetch_related('issues')
+    invoices_qs = RepairInvoice.objects.select_related('mechanic_task__mechanic')
+    mechanic_qs = MechanicProfile.objects.all()
+    driver_qs = DriverProfile.objects.all()
+    vehicle_qs = Vehicle.objects.all()
+
+    # Apply date range filter
+    if date_range != 'all':
+        today = timezone.now().date()
+        if date_range == 'today':
+            maintenance_qs = maintenance_qs.filter(submitted_at__date=today)
+            invoices_qs = invoices_qs.filter(created_at__date=today)
+        elif date_range == 'week':
+            maintenance_qs = maintenance_qs.filter(submitted_at__gte=timezone.now() - timedelta(days=7))
+            invoices_qs = invoices_qs.filter(created_at__gte=timezone.now() - timedelta(days=7))
+        elif date_range == 'month':
+            maintenance_qs = maintenance_qs.filter(submitted_at__gte=timezone.now() - timedelta(days=30))
+            invoices_qs = invoices_qs.filter(created_at__gte=timezone.now() - timedelta(days=30))
+        elif date_range == 'year':
+            maintenance_qs = maintenance_qs.filter(submitted_at__year=timezone.now().year)
+            invoices_qs = invoices_qs.filter(created_at__year=timezone.now().year)
+
+    # Export handlers
+    if report_type == 'maintenance':
+        return _export_maintenance(export_type, maintenance_qs)
+    elif report_type == 'invoices':
+        return _export_invoices(export_type, invoices_qs)
+    elif report_type == 'mechanics':
+        mechanic_stats = mechanic_qs.annotate(
+            total_tasks=Count('mechanictask'),
+            accepted_tasks=Count('mechanictask', filter=Q(mechanictask__status='in_progress') | Q(mechanictask__status='completed')),
+            completed_tasks=Count('mechanictask', filter=Q(mechanictask__status='completed')),
+            invoices_sent=Count('mechanictask__invoice', distinct=True),
+            pending_invoices=Count('mechanictask__invoice', filter=Q(mechanictask__invoice__status='pending')),
+            approved_invoices=Count('mechanictask__invoice', filter=Q(mechanictask__invoice__status='approved')),
+            paid_invoices=Count('mechanictask__invoice', filter=Q(mechanictask__invoice__status='paid'))
+        )
+        return _export_mechanics(export_type, mechanic_stats)
+    elif report_type == 'drivers':
+        driver_stats = driver_qs.annotate(
+            total_requests=Count('maintenancerequest'),
+            pending_requests=Count('maintenancerequest', filter=Q(maintenancerequest__status='pending')),
+            approved_requests=Count('maintenancerequest', filter=Q(maintenancerequest__status='approved')),
+            completed_requests=Count('maintenancerequest', filter=Q(maintenancerequest__status='completed'))
+        )
+        return _export_drivers(export_type, driver_stats)
+    elif report_type == 'vehicles':
+        vehicle_stats = vehicle_qs.annotate(total_repairs=Count('maintenancerequest'))
+        return _export_vehicles(export_type, vehicle_stats)
+    else:
+        return HttpResponse("Invalid report type", status=400)
+
+# Export Functions
+def _export_maintenance(export_type, requests):
+    if export_type == 'csv':
+        return _export_maintenance_csv(requests)
+    elif export_type == 'excel':
+        return _export_maintenance_excel(requests)
+    elif export_type == 'pdf':
+        return _export_maintenance_pdf(requests)
+
+def _export_invoices(export_type, invoices):
+    if export_type == 'csv':
+        return _export_invoices_csv(invoices)
+    elif export_type == 'excel':
+        return _export_invoices_excel(invoices)
+    elif export_type == 'pdf':
+        return _export_invoices_pdf(invoices)
+
+def _export_mechanics(export_type, mechanics):
+    if export_type == 'csv':
+        return _export_mechanics_csv(mechanics)
+    elif export_type == 'excel':
+        return _export_mechanics_excel(mechanics)
+    elif export_type == 'pdf':
+        return _export_mechanics_pdf(mechanics)
+
+def _export_drivers(export_type, drivers):
+    if export_type == 'csv':
+        return _export_drivers_csv(drivers)
+    elif export_type == 'excel':
+        return _export_drivers_excel(drivers)
+    elif export_type == 'pdf':
+        return _export_drivers_pdf(drivers)
+
+def _export_vehicles(export_type, vehicles):
+    if export_type == 'csv':
+        return _export_vehicles_csv(vehicles)
+    elif export_type == 'excel':
+        return _export_vehicles_excel(vehicles)
+    elif export_type == 'pdf':
+        return _export_vehicles_pdf(vehicles)
+
+# CSV Exports
+def _export_maintenance_csv(requests):
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="maintenance_reports_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"'
-
+    response['Content-Disposition'] = f'attachment; filename="maintenance_reports_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Report Type', 'ID', 'Driver', 'Vehicle', 'Issue', 'Cost', 'Status', 'Date'])
-
-    requests = MaintenanceRequest.objects.select_related('driver__user', 'vehicle', 'mechanic').prefetch_related('issues').order_by('-submitted_at')
+    writer.writerow(['Request ID', 'Driver', 'Vehicle', 'Status', 'Submitted Date'])
     for req in requests:
-        for issue in req.issues.all():
-            writer.writerow([
-                'Maintenance',
-                req.pk,
-                req.driver.user.username,
-                req.vehicle.number_plate,
-                issue.title,
-                issue.cost_estimate,
-                req.status,
-                req.submitted_at.strftime('%Y-%m-%d')
-            ])
+        writer.writerow([
+            req.pk,
+            req.driver.user.get_full_name() or req.driver.user.username,
+            req.vehicle.number_plate,
+            req.get_status_display(),
+            req.submitted_at.strftime('%Y-%m-%d')
+        ])
+    return response
 
+def _export_invoices_csv(invoices):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="invoice_reports_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Invoice ID', 'Mechanic', 'Task ID', 'Total Cost', 'Status', 'Created Date'])
+    for inv in invoices:
+        writer.writerow([
+            inv.id,
+            inv.mechanic_task.mechanic.full_name if inv.mechanic_task.mechanic else "N/A",
+            inv.mechanic_task.unique_task_id,
+            inv.total_cost,
+            inv.get_status_display(),
+            inv.created_at.strftime('%Y-%m-%d')
+        ])
+    return response
+
+def _export_mechanics_csv(mechanics):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="mechanic_reports_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Mechanic ID', 'Full Name', 'Total Tasks', 'Accepted Tasks', 'Completed Tasks', 'Invoices Sent',
+                     'Pending Invoices', 'Approved Invoices', 'Paid Invoices'])
+    for mech in mechanics:
+        writer.writerow([
+            mech['mechanic_id'],
+            mech['full_name'],
+            mech['total_tasks'],
+            mech['accepted_tasks'],
+            mech['completed_tasks'],
+            mech['invoices_sent'],
+            mech['pending_invoices'],
+            mech['approved_invoices'],
+            mech['paid_invoices']
+        ])
+    return response
+
+def _export_drivers_csv(drivers):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="driver_reports_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Driver ID', 'Full Name', 'Total Requests', 'Pending Requests', 'Approved Requests', 'Completed Requests'])
+    for driver in drivers:
+        full_name = f"{driver['user__first_name']} {driver['user__last_name']}".strip() or "N/A"
+        writer.writerow([
+            driver['driver_id'],
+            full_name,
+            driver['total_requests'],
+            driver['pending_requests'],
+            driver['approved_requests'],
+            driver['completed_requests']
+        ])
+    return response
+
+def _export_vehicles_csv(vehicles):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="vehicle_reports_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Number Plate', 'Make', 'Model', 'Total Repairs'])
+    for vehicle in vehicles:
+        writer.writerow([
+            vehicle['number_plate'],
+            vehicle['make'],
+            vehicle['model'],
+            vehicle['total_repairs']
+        ])
+    return response
+
+# Excel Exports (with styling and logo)
+def _export_maintenance_excel(requests):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Maintenance Reports"
+    _add_logo_and_title(ws, "Maintenance Report")
+    _add_table(ws, ['Request ID', 'Driver', 'Vehicle', 'Status', 'Submitted Date'], requests,
+               lambda req: [req.pk, req.driver.user.get_full_name() or req.driver.user.username,
+                            req.vehicle.number_plate, req.get_status_display(), req.submitted_at.strftime('%Y-%m-%d')])
+    return _finalize_excel(wb, "maintenance_reports")
+
+def _export_invoices_excel(invoices):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Invoice Reports"
+    _add_logo_and_title(ws, "Invoice Report")
+    _add_table(ws, ['Invoice ID', 'Mechanic', 'Task ID', 'Total Cost', 'Status', 'Created Date'], invoices,
+               lambda inv: [inv.id, inv.mechanic_task.mechanic.full_name if inv.mechanic_task.mechanic else "N/A",
+                            inv.mechanic_task.unique_task_id, inv.total_cost, inv.get_status_display(),
+                            inv.created_at.strftime('%Y-%m-%d')])
+    return _finalize_excel(wb, "invoice_reports")
+
+def _export_mechanics_excel(mechanics):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Mechanic Reports"
+    _add_logo_and_title(ws, "Mechanic Report")
+    _add_table(ws, ['Mechanic ID', 'Full Name', 'Total Tasks', 'Accepted Tasks', 'Completed Tasks', 'Invoices Sent',
+                    'Pending Invoices', 'Approved Invoices', 'Paid Invoices'], mechanics,
+               lambda mech: [mech['mechanic_id'], mech['full_name'], mech['total_tasks'], mech['accepted_tasks'],
+                             mech['completed_tasks'], mech['invoices_sent'], mech['pending_invoices'],
+                             mech['approved_invoices'], mech['paid_invoices']])
+    return _finalize_excel(wb, "mechanic_reports")
+
+def _export_drivers_excel(drivers):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Driver Reports"
+    _add_logo_and_title(ws, "Driver Report")
+    _add_table(ws, ['Driver ID', 'Full Name', 'Total Requests', 'Pending Requests', 'Approved Requests', 'Completed Requests'], drivers,
+               lambda driver: [driver['driver_id'], f"{driver['user__first_name']} {driver['user__last_name']}".strip() or "N/A",
+                               driver['total_requests'], driver['pending_requests'], driver['approved_requests'],
+                               driver['completed_requests']])
+    return _finalize_excel(wb, "driver_reports")
+
+def _export_vehicles_excel(vehicles):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Vehicle Reports"
+    _add_logo_and_title(ws, "Vehicle Report")
+    _add_table(ws, ['Number Plate', 'Make', 'Model', 'Total Repairs'], vehicles,
+               lambda vehicle: [vehicle['number_plate'], vehicle['make'], vehicle['model'], vehicle['total_repairs']])
+    return _finalize_excel(wb, "vehicle_reports")
+
+def _add_logo_and_title(ws, title_text):
+    logo_path = finders.find('managers/images/murangalogo.jpg')
+    if logo_path:
+        img = XLImage(logo_path)
+        img.height, img.width = 60, 60
+        ws.add_image(img, "A1")
+    ws.merge_cells('C1:F1')
+    ws['C1'] = f"Murang'a County - {title_text}"
+    ws['C1'].font = Font(size=14, bold=True)
+    ws['C1'].alignment = Alignment(horizontal="center")
+
+def _add_table(ws, headers, data, row_func):
+    ws.append([])
+    ws.append(headers)
+    header_fill = PatternFill(start_color="FFCC00", end_color="FFCC00", fill_type="solid")
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=3, column=col_num)
+        cell.fill = header_fill
+        cell.font = Font(bold=True)
+        cell.border = thin_border
+        cell.alignment = Alignment(horizontal="center")
+    row_num = 4
+    for item in data:
+        row = row_func(item)
+        for col_num, value in enumerate(row, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=value)
+            cell.border = thin_border
+            cell.alignment = Alignment(horizontal="center")
+        row_num += 1
+    # Filter out MergedCell objects when setting column widths
+    for col in ws.columns:
+        for cell in col:
+            if hasattr(cell, 'column_letter'):
+                ws.column_dimensions[cell.column_letter].width = 20
+                break  # Set width for the first valid cell in the column
+
+def _finalize_excel(wb, filename_prefix):
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="{filename_prefix}_{timezone.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+    wb.save(response)
+    return response
+
+def _export_maintenance_pdf(requests):
+    return _export_pdf("Maintenance Report", requests, lambda req: [req.pk, req.driver.user.get_full_name() or req.driver.user.username,
+                                                                   req.vehicle.number_plate, req.get_status_display(),
+                                                                   req.submitted_at.strftime('%Y-%m-%d')],
+                       ['Request ID', 'Driver', 'Vehicle', 'Status', 'Submitted Date'])
+
+def _export_invoices_pdf(invoices):
+    return _export_pdf("Invoice Report", invoices, lambda inv: [inv.id, inv.mechanic_task.mechanic.full_name if inv.mechanic_task.mechanic else "N/A",
+                                                               inv.mechanic_task.unique_task_id, inv.total_cost,
+                                                               inv.get_status_display(), inv.created_at.strftime('%Y-%m-%d')],
+                       ['Invoice ID', 'Mechanic', 'Task ID', 'Total Cost', 'Status', 'Created Date'])
+
+def _export_mechanics_pdf(mechanics):
+    return _export_pdf("Mechanic Report", mechanics, lambda mech: [mech['mechanic_id'], mech['full_name'], mech['total_tasks'],
+                                                                  mech['accepted_tasks'], mech['completed_tasks'], mech['invoices_sent'],
+                                                                  mech['pending_invoices'], mech['approved_invoices'], mech['paid_invoices']],
+                       ['Mechanic ID', 'Full Name', 'Total Tasks', 'Accepted Tasks', 'Completed Tasks', 'Invoices Sent',
+                        'Pending Invoices', 'Approved Invoices', 'Paid Invoices'])
+
+def _export_drivers_pdf(drivers):
+    return _export_pdf("Driver Report", drivers, lambda driver: [driver['driver_id'],
+                                                                f"{driver['user__first_name']} {driver['user__last_name']}".strip() or "N/A",
+                                                                driver['total_requests'], driver['pending_requests'],
+                                                                driver['approved_requests'], driver['completed_requests']],
+                       ['Driver ID', 'Full Name', 'Total Requests', 'Pending Requests', 'Approved Requests', 'Completed Requests'])
+
+def _export_vehicles_pdf(vehicles):
+    return _export_pdf("Vehicle Report", vehicles, lambda vehicle: [vehicle['number_plate'], vehicle['make'], vehicle['model'],
+                                                                   vehicle['total_repairs']],
+                       ['Number Plate', 'Make', 'Model', 'Total Repairs'])
+
+def _export_pdf(title_text, data, row_func, headers):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+    logo_path = finders.find('managers/images/murangalogo.jpg')
+    if logo_path:
+        try:
+            # Debug: Check if ReportlabImage is callable
+            if callable(ReportlabImage):
+                elements.append(ReportlabImage(logo_path, width=60, height=60))
+            else:
+                print(f"Debug: ReportlabImage is not callable, type: {type(ReportlabImage)}")
+        except Exception as e:
+            print(f"Error adding logo: {e}, skipping logo.")
+    styles = getSampleStyleSheet()
+    elements.append(Paragraph(f"<b>Murang'a County - {title_text}</b>", styles['Title']))
+    elements.append(Spacer(1, 12))
+    table_data = [headers]
+    for item in data:
+        table_data.append(row_func(item))
+    table = Table(table_data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#FFCC00')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey])
+    ]))
+    elements.append(table)
+    doc.build(elements)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{title_text.lower().replace(" ", "_")}_{timezone.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
     return response
 
 @login_required
 def report_details(request, report_type, report_id):
-    if report_type == 'mechanic':
-        profile = get_object_or_404(MechanicProfile, mechanic_id=report_id)
-        requests = MaintenanceRequest.objects.filter(mechanic=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice').order_by('-submitted_at')
-        title = f"Mechanic Report: {profile.full_name or profile.user.username}"
-        details = {
-            'type': 'mechanic',
-            'name': profile.full_name or profile.user.username,
-            'id': profile.mechanic_id,
-            'experience_years': profile.experience_years,
-            'specialization': profile.specialization_list,
-        }
-    elif report_type == 'driver':
-        profile = get_object_or_404(DriverProfile, driver_id=report_id)
-        requests = MaintenanceRequest.objects.filter(driver=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice').order_by('-submitted_at')
-        driver_name = f"{profile.user.first_name} {profile.user.last_name}".strip() or profile.user.username
-        title = f"Driver Report: {driver_name}"
-        details = {
-            'type': 'driver',
-            'name': driver_name,
-            'id': profile.driver_id,
-            'license_class': profile.license_class_list,
-            'experience_years': profile.experience_years,
-        }
-    elif report_type == 'vehicle':
-        profile = get_object_or_404(Vehicle, number_plate=report_id)
-        requests = MaintenanceRequest.objects.filter(vehicle=profile).select_related('driver__user', 'vehicle').prefetch_related('issues', 'assigned_task__invoice').order_by('-submitted_at')
-        title = f"Vehicle Report: {profile.make} {profile.model} ({profile.number_plate})"
-        details = {
-            'type': 'vehicle',
-            'name': f"{profile.make} {profile.model}",
-            'id': profile.number_plate,
-            'year': profile.year,
-            'mileage': profile.mileage,
-        }
-    else:
-        return HttpResponse("Invalid report type", status=400)
+    """Detailed report view for mechanics, drivers, vehicles, invoices, and maintenance."""
+    details, requests_data, summary = None, [], {}
+    if report_type == "mechanic":
+        details = get_object_or_404(MechanicProfile, mechanic_id=report_id)
+        requests_data = MaintenanceRequest.objects.filter(mechanic=details)
 
-    context = {
-        'title': title,
-        'details': details,
-        'requests': requests,
-    }
-    return render(request, 'managers/report_details.html', context)
+        total_tasks = MechanicTask.objects.filter(mechanic=details).count()
+        completed_tasks = MechanicTask.objects.filter(mechanic=details, status="completed").count()
+        invoices_sent = RepairInvoice.objects.filter(mechanic_task__mechanic=details).count()
+        pending_invoices = RepairInvoice.objects.filter(mechanic_task__mechanic=details, status="pending").count()
+        approved_invoices = RepairInvoice.objects.filter(mechanic_task__mechanic=details, status="approved").count()
+        paid_invoices = RepairInvoice.objects.filter(mechanic_task__mechanic=details, status="paid").count()
+
+        summary = {
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_tasks,
+            "invoices_sent": invoices_sent,
+            "pending_invoices": pending_invoices,
+            "approved_invoices": approved_invoices,
+            "paid_invoices": paid_invoices,
+        }
+        details.type = "mechanic"
+
+    elif report_type == "driver":
+        details = get_object_or_404(DriverProfile, driver_id=report_id)
+        requests_data = MaintenanceRequest.objects.filter(driver=details)
+
+        summary = {
+            "total_requests": requests_data.count(),
+            "pending_requests": requests_data.filter(status="pending").count(),
+            "approved_requests": requests_data.filter(status="approved").count(),
+            "completed_requests": requests_data.filter(status="completed").count(),
+        }
+        details.type = "driver"
+
+    elif report_type == "vehicle":
+        details = get_object_or_404(Vehicle, number_plate=report_id)
+        requests_data = MaintenanceRequest.objects.filter(vehicle=details)
+        summary = {"total_repairs": requests_data.count()}
+        details.type = "vehicle"
+
+    elif report_type == "maintenance":
+        details = get_object_or_404(MaintenanceRequest, pk=int(report_id))
+        requests_data = [details]
+        details.type = "maintenance"
+
+    elif report_type == "invoice":
+        details = get_object_or_404(RepairInvoice, pk=int(report_id))
+        requests_data = MaintenanceRequest.objects.filter(assigned_mechanic=details.mechanic_task.mechanic)
+        details.type = "invoice"
+
+    else:
+        return HttpResponseBadRequest("Invalid report type")
+
+    return render(request, "managers/report_details.html", {
+        "title": f"{report_type.capitalize()} Report",
+        "details": details,
+        "requests": requests_data,
+        "summary": summary,
+    })
+
 
 @login_required
 def settings(request):

@@ -4,115 +4,167 @@
 {% block title %}{{ title }} | Transport Manager{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{% static 'managers/css/reports.css' %}">
+<link rel="stylesheet" href="{% static 'managers/css/report_details.css' %}">
 {% endblock %}
 
 {% block content %}
-  <!-- Main Content -->
-  <div class="main-content">
-    <!-- Top Navigation Bar -->
-    <header class="top-nav">
-      <button class="sidebar-toggle">
-        <i class="fas fa-bars"></i>
-      </button>
-      <div class="nav-right">
-        <span class="user-greeting">
-          {% if user %}
-            Welcome, {{ user.first_name|default:"Transport Manager" }}
-          {% else %}
-            Welcome, Transport Manager
-          {% endif %}
-        </span>
-        <img src="{% static 'managers/images/murangalogo.jpg' %}" alt="User" class="user-avatar">
-      </div>
-    </header>
-
-    <div class="page-header">
-      <h1 class="page-title">{{ title }}</h1>
-      <p class="page-subtitle">Detailed report information</p>
+<div class="main-content">
+  <!-- Top Navigation -->
+  <header class="top-nav">
+    <button class="sidebar-toggle"><i class="fas fa-bars"></i></button>
+    <div class="nav-right">
+      <span class="user-greeting">
+        {% if user %}Welcome, {{ user.first_name|default:"Transport Manager" }}{% else %}Welcome, Transport Manager{% endif %}
+      </span>
+      <img src="{% static 'managers/images/murangalogo.jpg' %}" alt="User" class="user-avatar">
     </div>
+  </header>
 
-    <!-- Details Card -->
-    <div class="card details-card">
-      <h2 class="card-title">Details</h2>
-      <div class="details-grid">
+  <div class="page-header">
+    <h1 class="page-title">{{ title }}</h1>
+    <p class="page-subtitle">Detailed report information</p>
+  </div>
+
+  <!-- Details Card -->
+  <div class="card details-card">
+    <h2 class="card-title">Details</h2>
+    <div class="details-grid">
+      <div class="detail-group">
+        <span class="detail-label">ID</span>
+        <span class="detail-value">{{ details.id|default:"N/A" }}</span>
+      </div>
+      <div class="detail-group">
+        <span class="detail-label">Name</span>
+        <span class="detail-value">{{ details.name|default:"N/A" }}</span>
+      </div>
+
+      {% if details.type == 'mechanic' or details.type == 'driver' %}
         <div class="detail-group">
-          <span class="detail-label">ID</span>
-          <span class="detail-value">{{ details.id }}</span>
+          <span class="detail-label">Experience</span>
+          <span class="detail-value">{{ details.experience_years|default:"0" }} years</span>
+        </div>
+      {% endif %}
+
+      {% if details.type == 'mechanic' and details.specialization %}
+        <div class="detail-group">
+          <span class="detail-label">Specializations</span>
+          <span class="detail-value">
+            {% if details.specialization|length > 1 %}
+              {{ details.specialization|join:", " }}
+            {% else %}
+              {{ details.specialization.0|default:"N/A" }}
+            {% endif %}
+          </span>
+        </div>
+      {% endif %}
+
+      {% if details.type == 'driver' and details.license_class %}
+        <div class="detail-group">
+          <span class="detail-label">License Classes</span>
+          <span class="detail-value">
+            {% if details.license_class|length > 1 %}
+              {{ details.license_class|join:", " }}
+            {% else %}
+              {{ details.license_class.0|default:"N/A" }}
+            {% endif %}
+          </span>
+        </div>
+      {% endif %}
+
+      {% if details.type == 'vehicle' %}
+        <div class="detail-group">
+          <span class="detail-label">Year</span>
+          <span class="detail-value">{{ details.year|default:"N/A" }}</span>
         </div>
         <div class="detail-group">
-          <span class="detail-label">Name</span>
-          <span class="detail-value">{{ details.name }}</span>
+          <span class="detail-label">Mileage</span>
+          <span class="detail-value">{{ details.mileage|default:"N/A" }} km</span>
         </div>
-        {% if details.type == 'mechanic' or details.type == 'driver' %}
-          <div class="detail-group">
-            <span class="detail-label">Experience</span>
-            <span class="detail-value">{{ details.experience_years }} years</span>
-          </div>
-        {% endif %}
-        {% if details.type == 'mechanic' and details.specialization %}
-          <div class="detail-group">
-            <span class="detail-label">Specializations</span>
-            <span class="detail-value">{{ details.specialization|join:", " }}</span>
-          </div>
-        {% endif %}
-        {% if details.type == 'driver' and details.license_class %}
-          <div class="detail-group">
-            <span class="detail-label">License Classes</span>
-            <span class="detail-value">{{ details.license_class|join:", " }}</span>
-          </div>
-        {% endif %}
-        {% if details.type == 'vehicle' %}
-          <div class="detail-group">
-            <span class="detail-label">Year</span>
-            <span class="detail-value">{{ details.year|default:"N/A" }}</span>
-          </div>
-          <div class="detail-group">
-            <span class="detail-label">Mileage</span>
-            <span class="detail-value">{{ details.mileage|default:"N/A" }} km</span>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Maintenance Requests -->
-    <div class="card">
-      <h2 class="card-title">Maintenance Requests</h2>
-      <div class="table-container">
-        <table class="reports-table">
-          <thead>
-            <tr>
-              <th>Request ID</th>
-              <th>Driver</th>
-              <th>Vehicle</th>
-              <th>Issue</th>
-              <th>Cost Estimate</th>
-              <th>Status</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for request in requests %}
-              {% for issue in request.issues.all %}
-                <tr>
-                  <td>#{{ request.pk }}</td>
-                  <td>{{ request.driver.user.first_name }} {{ request.driver.user.last_name|default_if_none:"" }} {% if not request.driver.user.first_name and not request.driver.user.last_name %}({{ request.driver.user.username }}){% endif %}</td>
-                  <td>{{ request.vehicle.make }} {{ request.vehicle.model }} ({{ request.vehicle.number_plate }})</td>
-                  <td>{{ issue.title }} ({{ issue.priority }})</td>
-                  <td>{{ issue.cost_estimate|floatformat:2 }}</td>
-                  <td>{{ request.get_status_display }}</td>
-                  <td>{{ request.submitted_at|date:"M d, Y" }}</td>
-                </tr>
-              {% endfor %}
-            {% empty %}
-              <tr><td colspan="7">No maintenance requests found.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <div class="card-actions">
-        <a href="{% url 'managers:reports' %}" class="btn btn-outline">Back to Reports</a>
-      </div>
+      {% endif %}
     </div>
   </div>
+
+  <!-- Maintenance Requests -->
+  <div class="card">
+    <h2 class="card-title">Maintenance Requests</h2>
+    <div class="table-container">
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Driver</th>
+            <th>Vehicle</th>
+            <th>Issue</th>
+            <th>Cost Estimate</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if requests %}
+            {% for request in requests %}
+              {% if request.issues.all %}
+                {% for issue in request.issues.all %}
+                  <tr>
+                    <td>#{{ request.pk }}</td>
+                    <td>{{ request.driver.user.get_full_name|default:request.driver.user.username }}</td>
+                    <td>{{ request.vehicle.make }} {{ request.vehicle.model }} ({{ request.vehicle.number_plate }})</td>
+                    <td>{{ issue.title }} ({{ issue.priority }})</td>
+                    <td>{{ issue.cost_estimate|floatformat:2 }}</td>
+                    <td>{{ request.get_status_display }}</td>
+                    <td>{{ request.submitted_at|date:"M d, Y" }}</td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td>#{{ request.pk }}</td>
+                  <td>{{ request.driver.user.get_full_name|default:request.driver.user.username }}</td>
+                  <td>{{ request.vehicle.make }} {{ request.vehicle.model }} ({{ request.vehicle.number_plate }})</td>
+                  <td colspan="4">No issues recorded</td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="7">No maintenance requests found.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card-actions">
+      <a href="{% url 'managers:reports' %}" class="btn btn-outline">Back to Reports</a>
+    </div>
+  </div>
+
+  <!-- Additional Stats -->
+  {% if details.type == 'mechanic' %}
+    <div class="card">
+      <h2 class="card-title">Task & Invoice Summary</h2>
+      <div class="details-grid">
+        <div class="detail-group"><span class="detail-label">Total Tasks</span><span class="detail-value">{{ summary.total_tasks|default:"0" }}</span></div>
+        <div class="detail-group"><span class="detail-label">Completed Tasks</span><span class="detail-value">{{ summary.completed_tasks|default:"0" }}</span></div>
+        <div class="detail-group"><span class="detail-label">Invoices Sent</span><span class="detail-value">{{ summary.invoices_sent|default:"0" }}</span></div>
+        <div class="detail-group"><span class="detail-label">Pending Invoices</span><span class="detail-value">{{ summary.pending_invoices|default:"0" }}</span></div>
+        <div class="detail-group"><span class="detail-label">Approved Invoices</span><span class="detail-value">{{ summary.approved_invoices|default:"0" }}</span></div>
+        <div class="detail-group"><span class="detail-label">Paid Invoices</span><span class="detail-value">{{ summary.paid_invoices|default:"0" }}</span></div>
+      </div>
+    </div>
+  {% elif details.type == 'driver' %}
+    <div class="card">
+      <h2 class="card-title">Request Summary</h2>
+      <div class="details-grid">
+        <div class="detail-group"><span class="detail-label">Total Requests</span><span class="detail-value">{{ summary.total_requests|default:"0" }}</span></div>
+        <div class="detail-group"><span class="detail-label">Pending Requests</span><span class="detail-value">{{ summary.pending_requests|default:"0" }}</span></div>
+        <div class="detail-group"><span class="detail-label">Approved Requests</span><span class="detail-value">{{ summary.approved_requests|default:"0" }}</span></div>
+        <div class="detail-group"><span class="detail-label">Completed Requests</span><span class="detail-value">{{ summary.completed_requests|default:"0" }}</span></div>
+      </div>
+    </div>
+  {% elif details.type == 'vehicle' %}
+    <div class="card">
+      <h2 class="card-title">Repair Summary</h2>
+      <div class="details-grid">
+        <div class="detail-group"><span class="detail-label">Total Repairs</span><span class="detail-value">{{ summary.total_repairs|default:"0" }}</span></div>
+      </div>
+    </div>
+  {% endif %}
+</div>
 {% endblock %}

@@ -7,12 +7,15 @@ app_name = 'managers'
 urlpatterns = [
     # Dashboard & General
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('reports/', views.reports, name='reports'),
-    path('reports/export/', views.export_reports, name='export_reports'),
-    path('reports/<str:report_type>/<str:report_id>/', views.report_details, name='report_details'),
     path('settings/', views.settings, name='settings'),
     path('drivers/', views.drivers, name='drivers'),
     path('assignments/', views.assignments, name='assignments'),
+
+    # reports
+    path('reports/', views.reports, name='reports'),
+    path('reports/export/', views.export_reports, name='export_reports'),
+    path('reports/<str:report_type>/<str:report_id>/', views.report_details, name='report_details'),
+    path('reports/chart-data/', views.reports_chart_data, name='reports_chart_data'),
 
     # job management
     path('job-management/', views.job_management, name='job_management'),

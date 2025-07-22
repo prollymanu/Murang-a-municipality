@@ -14,9 +14,9 @@ from core.models import User
 # -------------------------------
 users_data = [
     {
-        "username": "driver1",
-        "email": "driver1@gmail.com.com",
-        "phone_number": "0711111111",
+        "username": "otieno",
+        "email": "otieno@gmail.com",
+        "phone_number": "0787907654",
         "role": "driver",
         "dl_no": "DL12345",
         "id_no": "12345678",
@@ -24,9 +24,9 @@ users_data = [
         "password": "Password123@",
     },
     {
-        "username": "mechanic1",
-        "email": "mechanic1@gmail.com",
-        "phone_number": "0722222222",
+        "username": "cate",
+        "email": "cate@gmail.com",
+        "phone_number": "0734562897",
         "role": "mechanic",
         "dl_no": "DL54321",
         "id_no": "87654321",
@@ -34,9 +34,9 @@ users_data = [
         "password": "Password123@",
     },
     {
-        "username": "manager1",
-        "email": "manager1@gmail.com",
-        "phone_number": "0733333333",
+        "username": "manager3",
+        "email": "manager3@gmail.com",
+        "phone_number": "0778923467",
         "role": "transport_manager",
         "dl_no": "DL99999",
         "id_no": "11223344",
@@ -45,8 +45,8 @@ users_data = [
     },
     {
         "username": "chief1",
-        "email": "chief1@gmail.com",
-        "phone_number": "0744444444",
+        "email": "chief2@gmail.com",
+        "phone_number": "0787452738",
         "role": "chief_officer",
         "dl_no": "DL88888",
         "id_no": "44332211",
