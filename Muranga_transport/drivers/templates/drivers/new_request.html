@@ -12,7 +12,6 @@
 <div class="container">
   <h1 class="page-title">Submit New Maintenance Request</h1>
   <form method="POST" action="{% url 'drivers:new_request' %}">
-
     {% csrf_token %}
     
     <div class="form-section">
@@ -47,4 +46,33 @@
     </div>
   </form>
 </div>
+
+<!-- ✅ Minimal JavaScript -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const issueContainer = document.getElementById("issue-container");
+  const addIssueBtn = document.querySelector(".add-issue-btn");
+
+  addIssueBtn.addEventListener("click", function() {
+    const issueRow = document.querySelector(".issue-row");
+    const newIssue = issueRow.cloneNode(true);
+
+    // Reset values in the cloned inputs
+    newIssue.querySelectorAll("input, select").forEach(el => el.value = "");
+
+    issueContainer.appendChild(newIssue);
+  });
+
+  issueContainer.addEventListener("click", function(e) {
+    if (e.target.classList.contains("btn-remove")) {
+      const rows = document.querySelectorAll(".issue-row");
+      if (rows.length > 1) {
+        e.target.closest(".issue-row").remove();
+      } else {
+        alert("At least one issue is required.");
+      }
+    }
+  });
+});
+</script>
 {% endblock %}
